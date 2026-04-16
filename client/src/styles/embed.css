@@ -1,0 +1,61 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.embed-map {
+  width: 100%;
+  height: 100%;
+}
+
+.embed-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.embed-popup {
+  padding: 10px 12px;
+}
+
+.embed-popup h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.embed-popup p {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.embed-popup img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px 4px 0 0;
+  display: block;
+}
+
+.embed-attribution {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  z-index: 1000;
+  font-size: 10px;
+  color: #9ca3af;
+  background: rgba(255,255,255,0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.embed-attribution a {
+  color: #2563eb;
+  text-decoration: none;
+}

@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  maps Map[]
+}
+
+model Map {
+  id          String  @id @default(cuid())
+  ownerId     String
+  owner       User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  isPublic    Boolean @default(false)
+  embedToken  String? @unique
+
+  centerLat   Float  @default(57.7089)
+  centerLng   Float  @default(11.9746)
+  defaultZoom Int    @default(12)
+
+  // Display options
+  tileLayer      String  @default("osm")
+  clusterMarkers Boolean @default(false)
+  showMinimap    Boolean @default(false)
+  showScaleBar   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  markers    Marker[]
+  categories Category[]
+  shapes     Shape[]
+}
+
+model Category {
+  id    String @id @default(cuid())
+  mapId String
+  map   Map    @relation(fields: [mapId], references: [id], onDelete: Cascade)
+
+  name  String
+  color String  @default("#3B82F6")
+  icon  String?
+
+  markers Marker[]
+  shapes  Shape[]
+
+  @@unique([mapId, name])
+}
+
+model Marker {
+  id         String    @id @default(cuid())
+  mapId      String
+  map        Map       @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?
+  lat         Float
+  lng         Float
+  date        DateTime?
+
+  // Visual style
+  shape       String  @default("pin")    // pin | circle | square | diamond | star
+  markerSize  String  @default("md")     // sm | md | lg
+  markerIcon  String? // emoji or short text shown inside the marker
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images MarkerImage[]
+}
+
+model Shape {
+  id          String    @id @default(cuid())
+  mapId       String
+  map         Map       @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  title       String?
+  description String?
+  type        String    // 'polyline' | 'polygon'
+  coordinates String    // JSON: [[lat, lng], ...]
+  color       String    @default("#2563eb")
+  weight      Int       @default(3)
+  fillColor   String?
+  fillOpacity Float     @default(0.2)
+  opacity     Float     @default(1.0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MarkerImage {
+  id       String @id @default(cuid())
+  markerId String
+  marker   Marker @relation(fields: [markerId], references: [id], onDelete: Cascade)
+
+  filename  String
+  url       String
+  order     Int    @default(0)
+
+  createdAt DateTime @default(now())
+}
