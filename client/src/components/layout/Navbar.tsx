@@ -1,7 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { Button } from '../common/Button';
+import { Link } from 'react-router-dom';
 
 interface NavbarProps {
   title?: string;
@@ -9,14 +7,6 @@ interface NavbarProps {
 }
 
 export function Navbar({ title, actions }: NavbarProps) {
-  const { user, clearAuth } = useAuthStore();
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    clearAuth();
-    navigate('/login');
-  }
-
   return (
     <nav style={{
       height: 56, background: '#fff', borderBottom: '1px solid #e5e7eb',
@@ -40,13 +30,6 @@ export function Navbar({ title, actions }: NavbarProps) {
       <div style={{ flex: 1 }} />
 
       {actions}
-
-      {user && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 13, color: '#6b7280' }}>{user.username}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>Sign out</Button>
-        </div>
-      )}
     </nav>
   );
 }

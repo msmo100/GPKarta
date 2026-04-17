@@ -17,7 +17,7 @@ export function CategoryList({ mapId, categories }: CategoryListProps) {
   const [addOpen, setAddOpen] = useState(false);
 
   async function handleDelete(cat: Category) {
-    if (!confirm(`Delete category "${cat.name}"? Markers will be unassigned.`)) return;
+    if (!confirm(`Ta bort kategorin "${cat.name}"? Markörer förlorar sin kategori.`)) return;
     await categoriesApi.delete(mapId, cat.id);
     removeCategory(cat.id);
   }
@@ -25,13 +25,13 @@ export function CategoryList({ mapId, categories }: CategoryListProps) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <h3 style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Categories</h3>
-        <Button variant="ghost" size="sm" onClick={() => setAddOpen(true)}>+ New</Button>
+        <h3 style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Kategorier</h3>
+        <Button variant="ghost" size="sm" onClick={() => setAddOpen(true)}>+ Ny</Button>
       </div>
 
       {categories.length === 0 ? (
         <p style={{ fontSize: 12, color: '#9ca3af', textAlign: 'center', padding: '16px 0' }}>
-          No categories yet
+          Inga kategorier än
         </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -50,7 +50,7 @@ export function CategoryList({ mapId, categories }: CategoryListProps) {
                 onClick={() => setEditTarget(cat)}
                 style={{ background: 'none', border: 'none', fontSize: 12, color: '#6b7280', cursor: 'pointer' }}
               >
-                Edit
+                Redigera
               </button>
               <button
                 onClick={() => handleDelete(cat)}
@@ -63,11 +63,11 @@ export function CategoryList({ mapId, categories }: CategoryListProps) {
         </div>
       )}
 
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="New category">
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Ny kategori">
         <CategoryForm mapId={mapId} onClose={() => setAddOpen(false)} />
       </Modal>
 
-      <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Edit category">
+      <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Redigera kategori">
         {editTarget && (
           <CategoryForm mapId={mapId} existing={editTarget} onClose={() => setEditTarget(null)} />
         )}

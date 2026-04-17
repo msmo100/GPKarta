@@ -25,6 +25,20 @@ interface UiState {
   filterCategoryIds: string[];
   filterFrom: string;
   filterTo: string;
+  filterGenderVictim: string[];
+  filterAgeMin: number;
+  filterAgeMax: number;
+  filterGenderPerpetrator: string[];
+  filterPunishment: string[];
+  filterPunishmentYearsMin: number;
+  filterPunishmentYearsMax: number;
+
+  markerPopupOpen: boolean;
+  openMarkerPopup: () => void;
+  closeMarkerPopup: () => void;
+
+  filterPanelOpen: boolean;
+  toggleFilterPanel: () => void;
 
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -39,10 +53,16 @@ interface UiState {
   setFilterCategories: (ids: string[]) => void;
   setFilterFrom: (from: string) => void;
   setFilterTo: (to: string) => void;
+  setFilterGenderVictim: (vals: string[]) => void;
+  setFilterAge: (min: number, max: number) => void;
+  setFilterGenderPerpetrator: (vals: string[]) => void;
+  setFilterPunishment: (vals: string[]) => void;
+  setFilterPunishmentYears: (min: number, max: number) => void;
   clearFilters: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
+  markerPopupOpen: false,
   sidebarOpen: true,
   activeMarkerId: null,
   activeShapeId: null,
@@ -55,6 +75,19 @@ export const useUiStore = create<UiState>((set) => ({
   filterCategoryIds: [],
   filterFrom: '',
   filterTo: '',
+  filterGenderVictim: [],
+  filterAgeMin: 0,
+  filterAgeMax: 100,
+  filterGenderPerpetrator: [],
+  filterPunishment: [],
+  filterPunishmentYearsMin: 0,
+  filterPunishmentYearsMax: 100,
+
+  filterPanelOpen: false,
+  toggleFilterPanel: () => set((s) => ({ filterPanelOpen: !s.filterPanelOpen })),
+
+  openMarkerPopup: () => set({ markerPopupOpen: true }),
+  closeMarkerPopup: () => set({ markerPopupOpen: false }),
 
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -69,5 +102,15 @@ export const useUiStore = create<UiState>((set) => ({
   setFilterCategories: (ids) => set({ filterCategoryIds: ids }),
   setFilterFrom: (from) => set({ filterFrom: from }),
   setFilterTo: (to) => set({ filterTo: to }),
-  clearFilters: () => set({ filterCategoryIds: [], filterFrom: '', filterTo: '' }),
+  setFilterGenderVictim: (vals) => set({ filterGenderVictim: vals }),
+  setFilterAge: (min, max) => set({ filterAgeMin: min, filterAgeMax: max }),
+  setFilterGenderPerpetrator: (vals) => set({ filterGenderPerpetrator: vals }),
+  setFilterPunishment: (vals) => set({ filterPunishment: vals }),
+  setFilterPunishmentYears: (min, max) => set({ filterPunishmentYearsMin: min, filterPunishmentYearsMax: max }),
+  clearFilters: () => set({
+    filterCategoryIds: [], filterFrom: '', filterTo: '',
+    filterGenderVictim: [], filterAgeMin: 0, filterAgeMax: 100,
+    filterGenderPerpetrator: [], filterPunishment: [],
+    filterPunishmentYearsMin: 0, filterPunishmentYearsMax: 100,
+  }),
 }));

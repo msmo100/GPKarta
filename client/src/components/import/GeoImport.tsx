@@ -161,7 +161,7 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
         else parsed = parseKML(text);
         setFeatures(parsed);
       } catch {
-        setError('Could not parse file — check format is correct');
+        setError('Kunde inte tolka filen — kontrollera att formatet är korrekt');
       }
     };
     reader.readAsText(file);
@@ -177,7 +177,7 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
 
       if (markerFeatures.length > 0) {
         const created = await markersApi.bulkCreate(mapId, markerFeatures.map((f) => ({
-          title: f.title || 'Imported marker',
+          title: f.title || 'Importerad markör',
           description: f.description,
           lat: f.lat!,
           lng: f.lng!,
@@ -198,7 +198,7 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
 
       setDone(true);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Import failed');
+      setError(err.response?.data?.error || 'Importen misslyckades');
     } finally {
       setImporting(false);
     }
@@ -251,12 +251,12 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
   if (done) {
     return (
       <div style={{ textAlign: 'center', padding: '24px 0' }}>
-        <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Import complete!</p>
+        <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Importen klar!</p>
         <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
-          {features!.filter((f) => f.type === 'marker').length} markers and{' '}
-          {features!.filter((f) => f.type !== 'marker').length} shapes added.
+          {features!.filter((f) => f.type === 'marker').length} markörer och{' '}
+          {features!.filter((f) => f.type !== 'marker').length} former tillagda.
         </p>
-        <Button onClick={onDone}>Close</Button>
+        <Button onClick={onDone}>Stäng</Button>
       </div>
     );
   }
@@ -265,17 +265,17 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
     <div>
       {/* Export section */}
       <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 14px', marginBottom: 20 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#166534', marginBottom: 6 }}>Export map data</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#166534', marginBottom: 6 }}>Exportera kartdata</p>
         <p style={{ fontSize: 12, color: '#15803d', marginBottom: 10 }}>
-          Download all {markers.length} markers and {shapes.length} shapes as GeoJSON.
+          Ladda ner alla {markers.length} markörer och {shapes.length} former som GeoJSON.
         </p>
         <Button size="sm" variant="secondary" onClick={handleExport}>
-          ↓ Download GeoJSON
+          ↓ Ladda ner GeoJSON
         </Button>
       </div>
 
       {/* Import section */}
-      <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Import from file</p>
+      <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Importera från fil</p>
 
       {/* Format tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
@@ -308,12 +308,12 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
         }}
       >
         <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>
-          {fileName || `Drop a .${format} file here or click to browse`}
+          {fileName || `Släpp en .${format}-fil här eller klicka för att bläddra`}
         </p>
         <p style={{ fontSize: 12, color: '#9ca3af' }}>
-          {format === 'geojson' ? 'GeoJSON FeatureCollection or Feature' :
-           format === 'gpx' ? 'Waypoints, tracks, and routes' :
-           'KML placemarks — points, lines, and polygons'}
+          {format === 'geojson' ? 'GeoJSON FeatureCollection eller Feature' :
+           format === 'gpx' ? 'Vägpunkter, spår och rutter' :
+           'KML-platsmärken — punkter, linjer och polygoner'}
         </p>
       </div>
       <input ref={fileRef} type="file" accept={`.${format}`} style={{ display: 'none' }}
@@ -322,12 +322,12 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
       {features && (
         <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
           <p style={{ fontSize: 13, color: '#0369a1', fontWeight: 500, marginBottom: 4 }}>
-            Ready to import {features.length} feature{features.length !== 1 ? 's' : ''}
+            Redo att importera {features.length} objekt
           </p>
           <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#0284c7' }}>
-            <span>📍 {features.filter((f) => f.type === 'marker').length} markers</span>
-            <span>〰 {features.filter((f) => f.type === 'polyline').length} lines</span>
-            <span>⬡ {features.filter((f) => f.type === 'polygon').length} polygons</span>
+            <span>📍 {features.filter((f) => f.type === 'marker').length} markörer</span>
+            <span>〰 {features.filter((f) => f.type === 'polyline').length} linjer</span>
+            <span>⬡ {features.filter((f) => f.type === 'polygon').length} polygoner</span>
           </div>
         </div>
       )}
@@ -335,9 +335,9 @@ export function GeoImport({ mapId, categories, onDone }: GeoImportProps) {
       {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <Button variant="secondary" onClick={onDone}>Cancel</Button>
+        <Button variant="secondary" onClick={onDone}>Avbryt</Button>
         <Button onClick={handleImport} loading={importing} disabled={!features}>
-          Import
+          Importera
         </Button>
       </div>
     </div>

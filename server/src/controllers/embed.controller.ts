@@ -30,7 +30,7 @@ export async function getEmbedData(req: Request, res: Response, next: NextFuncti
 
     if (!map) throw AppError.notFound('Embed not found');
 
-    const { ownerId, embedToken, ...publicMap } = map;
+    const { embedToken, ...publicMap } = map;
     res.json({ data: { ...publicMap, shapes: publicMap.shapes.map(parseShape) } });
   } catch (err) {
     next(err);

@@ -56,7 +56,7 @@ function ScaleBar() {
 function GeolocationControl() {
   const map = useMap();
   useEffect(() => {
-    const btn = L.control({ position: 'bottomright' });
+    const btn = (L.control as any)({ position: 'bottomright' });
     btn.onAdd = () => {
       const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       const a = L.DomUtil.create('a', '', div);
@@ -87,7 +87,7 @@ function MiniMap({ tileUrl, attribution }: { tileUrl: string; attribution: strin
     div.style.cssText = 'width:150px;height:100px;border:2px solid rgba(0,0,0,0.3);border-radius:4px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.2)';
     containerRef.current = div;
 
-    const corner = L.control({ position: 'bottomleft' });
+    const corner = (L.control as any)({ position: 'bottomleft' });
     corner.onAdd = () => div;
     corner.addTo(map);
 
@@ -125,12 +125,13 @@ function ClusteredMarkerLayer({ markers }: { markers: Marker[] }) {
   const activeMarkerId = useUiStore((s) => s.activeMarkerId);
   const setActiveMarker = useUiStore((s) => s.setActiveMarker);
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen);
+  const openMarkerPopup = useUiStore((s) => s.openMarkerPopup);
 
   useEffect(() => {
     const cluster = (L as any).markerClusterGroup({ maxClusterRadius: 40 });
 
     markers.forEach((m) => {
-      const color = m.category?.color ?? '#2563eb';
+      const color = m.color ?? m.category?.color ?? '#2563eb';
       const isSelected = m.id === activeMarkerId;
       const icon = createMarkerIcon(
         color,
@@ -138,10 +139,14 @@ function ClusteredMarkerLayer({ markers }: { markers: Marker[] }) {
         (m.markerSize as MarkerSize) ?? 'md',
         m.markerIcon ?? null,
         isSelected,
+        m.strokeColor ?? null,
+        m.strokeWidth ?? 1.5,
+        m.opacity ?? 1.0,
       );
       const leafletMarker = L.marker([m.lat, m.lng], { icon });
       leafletMarker.on('click', () => {
         setActiveMarker(m.id);
+        openMarkerPopup();
         setSidebarOpen(true);
       });
       cluster.addLayer(leafletMarker);

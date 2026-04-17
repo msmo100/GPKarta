@@ -7,21 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  username     String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  maps Map[]
-}
-
 model Map {
   id          String  @id @default(cuid())
-  ownerId     String
-  owner       User    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   title       String
   description String?
   isPublic    Boolean @default(false)
@@ -36,6 +23,10 @@ model Map {
   clusterMarkers Boolean @default(false)
   showMinimap    Boolean @default(false)
   showScaleBar   Boolean @default(true)
+
+  // Popup style
+  popupBg        String?
+  popupTextColor String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,10 +64,26 @@ model Marker {
   lng         Float
   date        DateTime?
 
+  // Primary image URL (from CSV import)
+  imageUrl      String?
+
+  // Extra attributes (imported from CSV)
+  genderVictim      String?
+  ageVictim         Float?
+  genderPerpetrator String?
+  punishment        String?
+  punishmentYears   Float?
+  region            String?
+
   // Visual style
-  shape       String  @default("pin")    // pin | circle | square | diamond | star
-  markerSize  String  @default("md")     // sm | md | lg
-  markerIcon  String? // emoji or short text shown inside the marker
+  shape       String  @default("pin")
+  markerSize  String  @default("md")
+  markerIcon  String?
+  color       String?
+  strokeColor String?
+  strokeWidth Float   @default(1.5)
+  opacity     Float   @default(1.0)
+  videoUrl    String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -93,8 +100,8 @@ model Shape {
 
   title       String?
   description String?
-  type        String    // 'polyline' | 'polygon'
-  coordinates String    // JSON: [[lat, lng], ...]
+  type        String
+  coordinates String
   color       String    @default("#2563eb")
   weight      Int       @default(3)
   fillColor   String?

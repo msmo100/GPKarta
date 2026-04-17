@@ -1,19 +1,10 @@
 import { Router } from 'express';
 import {
-  listMaps,
-  getMap,
-  createMap,
-  updateMap,
-  deleteMap,
-  duplicateMap,
-  generateEmbedToken,
-  revokeEmbedToken,
+  listMaps, getMap, createMap, updateMap, deleteMap,
+  duplicateMap, generateEmbedToken, revokeEmbedToken,
 } from '../controllers/maps.controller';
-import { requireAuth } from '../middleware/auth';
 
 const router = Router();
-
-router.use(requireAuth);
 
 router.get('/', listMaps);
 router.post('/', createMap);

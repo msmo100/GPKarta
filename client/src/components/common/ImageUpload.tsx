@@ -27,7 +27,7 @@ export function ImageUpload({ markerId, images, onImagesChange, readOnly }: Imag
       }
       onImagesChange([...images, ...uploaded]);
     } catch (e: any) {
-      setError(e.response?.data?.error || 'Upload failed');
+      setError(e.response?.data?.error || 'Uppladdningen misslyckades');
     } finally {
       setUploading(false);
     }
@@ -83,7 +83,7 @@ export function ImageUpload({ markerId, images, onImagesChange, readOnly }: Imag
             loading={uploading}
             onClick={() => inputRef.current?.click()}
           >
-            + Add images
+            + Lägg till bilder
           </Button>
           {error && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>{error}</p>}
         </>

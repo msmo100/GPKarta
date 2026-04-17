@@ -13,11 +13,12 @@ export function MarkerLayer({ markers, readOnly }: MarkerLayerProps) {
   const activeMarkerId = useUiStore((s) => s.activeMarkerId);
   const setActiveMarker = useUiStore((s) => s.setActiveMarker);
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen);
+  const openMarkerPopup = useUiStore((s) => s.openMarkerPopup);
 
   return (
     <>
       {markers.map((marker) => {
-        const color = marker.category?.color ?? '#2563eb';
+        const color = marker.color ?? marker.category?.color ?? '#2563eb';
         const isSelected = marker.id === activeMarkerId;
         const icon = createMarkerIcon(
           color,
@@ -25,6 +26,9 @@ export function MarkerLayer({ markers, readOnly }: MarkerLayerProps) {
           (marker.markerSize as MarkerSize) ?? 'md',
           marker.markerIcon ?? null,
           isSelected,
+          marker.strokeColor ?? null,
+          marker.strokeWidth ?? 1.5,
+          marker.opacity ?? 1.0,
         );
 
         return (
@@ -34,10 +38,9 @@ export function MarkerLayer({ markers, readOnly }: MarkerLayerProps) {
             icon={icon}
             eventHandlers={{
               click: () => {
-                if (!readOnly) {
-                  setActiveMarker(marker.id);
-                  setSidebarOpen(true);
-                }
+                setActiveMarker(marker.id);
+                openMarkerPopup();
+                if (!readOnly) setSidebarOpen(true);
               },
             }}
           >

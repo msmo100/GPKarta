@@ -22,7 +22,7 @@ export function ShapeList({ mapId, shapes, categories }: ShapeListProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   async function handleDelete(shape: Shape) {
-    if (!confirm(`Delete "${shape.title || 'this shape'}"?`)) return;
+    if (!confirm(`Ta bort "${shape.title || 'den här formen'}"?`)) return;
     setDeleting(shape.id);
     try {
       await shapesApi.delete(mapId, shape.id);
@@ -36,7 +36,7 @@ export function ShapeList({ mapId, shapes, categories }: ShapeListProps) {
   if (shapes.length === 0) {
     return (
       <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '24px 0' }}>
-        Use the drawing tools on the map to add lines and polygons
+        Använd ritverktygen på kartan för att lägga till linjer och polygoner
       </p>
     );
   }
@@ -79,15 +79,15 @@ export function ShapeList({ mapId, shapes, categories }: ShapeListProps) {
 
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {shape.title || (shape.type === 'polygon' ? 'Untitled polygon' : 'Untitled line')}
+                  {shape.title || (shape.type === 'polygon' ? 'Namnlös polygon' : 'Namnlös linje')}
                 </p>
                 <p style={{ fontSize: 11, color: '#9ca3af' }}>
-                  {shape.type === 'polygon' ? 'Polygon' : 'Polyline'} · {shape.coordinates.length} points
+                  {shape.type === 'polygon' ? 'Polygon' : 'Linje'} · {shape.coordinates.length} punkter
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
-                <Button size="sm" variant="ghost" onClick={() => setEditingShape(shape)}>Edit</Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditingShape(shape)}>Redigera</Button>
                 <Button
                   size="sm" variant="ghost"
                   loading={deleting === shape.id}
@@ -105,7 +105,7 @@ export function ShapeList({ mapId, shapes, categories }: ShapeListProps) {
       <Modal
         open={!!editingShape}
         onClose={() => setEditingShape(null)}
-        title={`Edit ${editingShape?.type === 'polygon' ? 'polygon' : 'line'}`}
+        title={`Redigera ${editingShape?.type === 'polygon' ? 'polygon' : 'linje'}`}
       >
         {editingShape && (
           <ShapeForm

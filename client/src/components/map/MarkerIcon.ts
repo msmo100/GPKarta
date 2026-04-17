@@ -29,14 +29,20 @@ export function createMarkerIcon(
   size: MarkerSize = 'md',
   icon: string | null = null,
   selected = false,
+  strokeColor: string | null = null,
+  strokeWidth = 1.5,
+  opacity = 1.0,
 ): L.DivIcon {
-  const key = `${color}-${shape}-${size}-${icon}-${selected}`;
+  const key = `${color}-${shape}-${size}-${icon}-${selected}-${strokeColor}-${strokeWidth}-${opacity}`;
   if (cache.has(key)) return cache.get(key)!;
 
   const px = SIZE_MAP[size] + (selected ? 4 : 0);
-  const border = selected
-    ? '2.5px solid white; box-shadow:0 0 0 2.5px rgba(0,0,0,0.35),0 2px 6px rgba(0,0,0,0.4)'
-    : '1.5px solid rgba(0,0,0,0.22); box-shadow:0 2px 5px rgba(0,0,0,0.25)';
+
+  const resolvedStroke = strokeColor ?? 'rgba(0,0,0,0.22)';
+  const resolvedWidth = selected ? Math.max(strokeWidth, 2.5) : strokeWidth;
+  const extraShadow = selected
+    ? ';box-shadow:0 0 0 2.5px rgba(0,0,0,0.35),0 2px 6px rgba(0,0,0,0.4)'
+    : ';box-shadow:0 2px 5px rgba(0,0,0,0.25)';
 
   const shapeStyle = shapeClipPath(shape);
   const iconRot    = iconRotation(shape);
@@ -50,13 +56,13 @@ export function createMarkerIcon(
     <div style="
       width:${px}px;height:${px}px;
       background:${color};
+      opacity:${opacity};
       ${shapeStyle};
-      border:${border};
+      border:${resolvedWidth}px solid ${resolvedStroke}${extraShadow};
       position:relative;
       display:flex;align-items:center;justify-content:center;
     ">${innerHtml}</div>`;
 
-  // For pin shape the anchor is at the bottom point of the rotated square
   const anchorX = px / 2;
   const anchorY = shape === 'pin' ? px : px / 2;
 

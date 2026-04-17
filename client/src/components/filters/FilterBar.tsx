@@ -30,11 +30,11 @@ export function FilterBar({ categories }: FilterBarProps) {
     <div style={{ padding: '10px 12px', borderBottom: '1px solid #e5e7eb' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af' }}>
-          Filters
+          Filter
         </span>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} style={{ fontSize: 11, padding: '2px 6px', height: 'auto' }}>
-            Clear
+            Rensa
           </Button>
         )}
       </div>

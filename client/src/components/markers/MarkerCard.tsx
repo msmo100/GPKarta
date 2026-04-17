@@ -41,7 +41,7 @@ export function MarkerCard({ marker, active }: MarkerCardProps) {
           )}
           <div style={{ display: 'flex', gap: 8, marginTop: 4, fontSize: 11, color: '#9ca3af' }}>
             {marker.date && <span>{new Date(marker.date).toLocaleDateString()}</span>}
-            {marker.images?.length > 0 && <span>{marker.images.length} photo{marker.images.length > 1 ? 's' : ''}</span>}
+            {marker.images?.length > 0 && <span>{marker.images.length} foto{marker.images.length > 1 ? 'n' : ''}</span>}
           </div>
         </div>
       </div>

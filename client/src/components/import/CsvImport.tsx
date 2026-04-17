@@ -8,30 +8,49 @@ import { Select } from '../common/FormField';
 // ── CSV parsing ──────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim());
-  if (lines.length < 2) return { headers: [], rows: [] };
+  // Strip UTF-8 BOM if present
+  const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (!clean.trim()) return { headers: [], rows: [] };
 
-  function splitLine(line: string): string[] {
-    const result: string[] = [];
-    let cur = '';
-    let inQuote = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (ch === '"') {
-        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
-        else inQuote = !inQuote;
-      } else if (ch === ',' && !inQuote) {
-        result.push(cur.trim()); cur = '';
-      } else {
-        cur += ch;
-      }
+  // Auto-detect delimiter from the first line (outside of any quotes)
+  const firstNewline = clean.indexOf('\n');
+  const firstLine = firstNewline === -1 ? clean : clean.slice(0, firstNewline);
+  const commas = (firstLine.match(/,/g) ?? []).length;
+  const semis  = (firstLine.match(/;/g) ?? []).length;
+  const tabs   = (firstLine.match(/\t/g) ?? []).length;
+  const delim  = tabs > commas && tabs > semis ? '\t'
+               : semis > commas               ? ';'
+               : ',';
+
+  // Full-document character-level parser — handles multi-line quoted fields
+  const records: string[][] = [];
+  let cur = '';
+  let inQuote = false;
+  let row: string[] = [];
+
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    if (ch === '"') {
+      if (inQuote && clean[i + 1] === '"') { cur += '"'; i++; }  // escaped quote ""
+      else inQuote = !inQuote;
+    } else if (ch === delim && !inQuote) {
+      row.push(cur.trim()); cur = '';
+    } else if (ch === '\n' && !inQuote) {
+      row.push(cur.trim()); cur = '';
+      if (row.some((f) => f !== '')) records.push(row);  // skip blank lines
+      row = [];
+    } else {
+      cur += ch;
     }
-    result.push(cur.trim());
-    return result;
   }
+  // flush last field / row
+  row.push(cur.trim());
+  if (row.some((f) => f !== '')) records.push(row);
 
-  const headers = splitLine(lines[0]).map((h) => h.toLowerCase().trim());
-  const rows = lines.slice(1).map(splitLine);
+  if (records.length < 2) return { headers: [], rows: [] };
+
+  const headers = records[0].map((h) => h.toLowerCase().trim());
+  const rows = records.slice(1);
   return { headers, rows };
 }
 
@@ -43,6 +62,13 @@ const FIELD_ALIASES: Record<string, string> = {
   description: 'description', desc: 'description', notes: 'description', note: 'description',
   date: 'date', time: 'date', datetime: 'date', timestamp: 'date',
   category: 'category', type: 'category', kind: 'category',
+  image: 'imageUrl', image_url: 'imageUrl', foto: 'imageUrl',
+  gender_victim: 'genderVictim', gender_offer: 'genderVictim',
+  age_victim: 'ageVictim', age_offer: 'ageVictim',
+  gender_perpetrator: 'genderPerpetrator', gender_gärningsman: 'genderPerpetrator',
+  punishment: 'punishment', straff: 'punishment',
+  punishment_years: 'punishmentYears', straff_år: 'punishmentYears',
+  region: 'region',
 };
 
 function autoMap(headers: string[]): Record<string, string> {
@@ -64,11 +90,18 @@ interface PreviewRow {
   description?: string;
   date?: string;
   categoryName?: string;
+  imageUrl?: string;
+  genderVictim?: string;
+  ageVictim?: number;
+  genderPerpetrator?: string;
+  punishment?: string;
+  punishmentYears?: number;
+  region?: string;
   valid: boolean;
   error?: string;
 }
 
-const TARGET_FIELDS = ['title', 'lat', 'lng', 'description', 'date', 'category', '(ignore)'];
+const TARGET_FIELDS = ['title', 'lat', 'lng', 'description', 'date', 'category', 'imageUrl', 'genderVictim', 'ageVictim', 'genderPerpetrator', 'punishment', 'punishmentYears', 'region', '(ignore)'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -93,17 +126,27 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
   // ── Step 1: upload ──
   function handleFile(file: File) {
     setError('');
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
+    function process(text: string) {
       const { headers, rows } = parseCSV(text);
       if (!headers.length) { setError('Could not parse CSV — make sure the file has a header row.'); return; }
       setHeaders(headers);
       setRows(rows);
       setColMap(autoMap(headers));
       setStep('map');
+    }
+    const r1 = new FileReader();
+    r1.onload = (e) => {
+      const text = e.target?.result as string;
+      // If UTF-8 produced replacement chars, re-try as Windows-1252 (common for Swedish Excel exports)
+      if (text.includes('\uFFFD')) {
+        const r2 = new FileReader();
+        r2.onload = (e2) => process(e2.target?.result as string);
+        r2.readAsText(file, 'windows-1252');
+      } else {
+        process(text);
+      }
     };
-    reader.readAsText(file, 'utf-8');
+    r1.readAsText(file, 'utf-8');
   }
 
   // ── Step 2: column mapping → build preview ──
@@ -116,15 +159,16 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
 
       const latStr = get('lat');
       const lngStr = get('lng');
-      const lat = parseFloat(latStr);
-      const lng = parseFloat(lngStr);
+      // Normalise decimal separator: Swedish CSVs use comma (57,708 → 57.708)
+      const lat = parseFloat(latStr.replace(',', '.'));
+      const lng = parseFloat(lngStr.replace(',', '.'));
       const title = get('title') || `Row ${rows.indexOf(row) + 2}`;
 
       if (!latStr || !lngStr || isNaN(lat) || isNaN(lng)) {
-        return { title, lat: 0, lng: 0, valid: false, error: 'Missing or invalid lat/lng' };
+        return { title, lat: 0, lng: 0, valid: false, error: `Bad lat/lng: got "${latStr}" / "${lngStr}"` };
       }
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        return { title, lat, lng, valid: false, error: 'Coordinates out of range' };
+        return { title, lat, lng, valid: false, error: `Coords out of range: ${lat}, ${lng}` };
       }
 
       const dateStr = get('date');
@@ -134,6 +178,8 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
         date = isNaN(d.getTime()) ? undefined : d.toISOString();
       }
 
+      const ageStr = get('ageVictim');
+      const pyStr = get('punishmentYears');
       return {
         title,
         lat,
@@ -141,6 +187,13 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
         description: get('description') || undefined,
         date,
         categoryName: get('category') || undefined,
+        imageUrl: get('imageUrl') || undefined,
+        genderVictim: get('genderVictim') || undefined,
+        ageVictim: ageStr ? (parseFloat(ageStr.replace(',', '.')) || undefined) : undefined,
+        genderPerpetrator: get('genderPerpetrator') || undefined,
+        punishment: get('punishment') || undefined,
+        punishmentYears: pyStr ? (parseFloat(pyStr.replace(',', '.')) || undefined) : undefined,
+        region: get('region') || undefined,
         valid: true,
       };
     });
@@ -189,6 +242,13 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
       categoryId: r.categoryName ? catMap[r.categoryName.toLowerCase()] : undefined,
       shape: 'pin' as MarkerShape,
       markerSize: 'md' as MarkerSize,
+      imageUrl: r.imageUrl,
+      genderVictim: r.genderVictim,
+      ageVictim: r.ageVictim,
+      genderPerpetrator: r.genderPerpetrator,
+      punishment: r.punishment,
+      punishmentYears: r.punishmentYears,
+      region: r.region,
     }));
 
     try {

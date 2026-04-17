@@ -1,8 +1,7 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { AppError } from '../utils/errors';
-import { AuthRequest } from '../middleware/auth';
 
 const shapeSchema = z.object({
   title: z.string().max(200).optional().nullable(),
@@ -17,10 +16,9 @@ const shapeSchema = z.object({
   categoryId: z.string().optional().nullable(),
 });
 
-async function assertMapOwner(mapId: string, userId: string) {
+async function assertMapExists(mapId: string) {
   const map = await db.map.findUnique({ where: { id: mapId } });
   if (!map) throw AppError.notFound('Map not found');
-  if (map.ownerId !== userId) throw AppError.forbidden();
   return map;
 }
 
@@ -32,9 +30,9 @@ function parseShape(s: any) {
   return { ...s, coordinates: JSON.parse(s.coordinates) };
 }
 
-export async function listShapes(req: AuthRequest, res: Response, next: NextFunction) {
+export async function listShapes(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const shapes = await db.shape.findMany({
       where: { mapId: req.params.mapId },
       include: shapeInclude,
@@ -46,16 +44,12 @@ export async function listShapes(req: AuthRequest, res: Response, next: NextFunc
   }
 }
 
-export async function createShape(req: AuthRequest, res: Response, next: NextFunction) {
+export async function createShape(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const data = shapeSchema.parse(req.body);
     const shape = await db.shape.create({
-      data: {
-        ...data,
-        coordinates: JSON.stringify(data.coordinates),
-        mapId: req.params.mapId,
-      },
+      data: { ...data, coordinates: JSON.stringify(data.coordinates), mapId: req.params.mapId },
       include: shapeInclude,
     });
     res.status(201).json({ data: parseShape(shape) });
@@ -64,21 +58,15 @@ export async function createShape(req: AuthRequest, res: Response, next: NextFun
   }
 }
 
-export async function updateShape(req: AuthRequest, res: Response, next: NextFunction) {
+export async function updateShape(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
-    const existing = await db.shape.findFirst({
-      where: { id: req.params.shapeId, mapId: req.params.mapId },
-    });
+    await assertMapExists(req.params.mapId);
+    const existing = await db.shape.findFirst({ where: { id: req.params.shapeId, mapId: req.params.mapId } });
     if (!existing) throw AppError.notFound('Shape not found');
-
     const data = shapeSchema.partial().parse(req.body);
     const shape = await db.shape.update({
       where: { id: req.params.shapeId },
-      data: {
-        ...data,
-        coordinates: data.coordinates ? JSON.stringify(data.coordinates) : undefined,
-      },
+      data: { ...data, coordinates: data.coordinates ? JSON.stringify(data.coordinates) : undefined },
       include: shapeInclude,
     });
     res.json({ data: parseShape(shape) });
@@ -87,12 +75,10 @@ export async function updateShape(req: AuthRequest, res: Response, next: NextFun
   }
 }
 
-export async function deleteShape(req: AuthRequest, res: Response, next: NextFunction) {
+export async function deleteShape(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
-    const existing = await db.shape.findFirst({
-      where: { id: req.params.shapeId, mapId: req.params.mapId },
-    });
+    await assertMapExists(req.params.mapId);
+    const existing = await db.shape.findFirst({ where: { id: req.params.shapeId, mapId: req.params.mapId } });
     if (!existing) throw AppError.notFound('Shape not found');
     await db.shape.delete({ where: { id: req.params.shapeId } });
     res.status(204).send();

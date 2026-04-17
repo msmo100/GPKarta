@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import type { MapRecord, Marker, Category, Shape } from '@gpkarta/shared';
 import { useUiStore } from '../../store/uiStore';
+import { useMapStore } from '../../store/mapStore';
 import { FilterBar } from '../filters/FilterBar';
 import { MarkerPanel } from '../markers/MarkerPanel';
 import { MarkerCard } from '../markers/MarkerCard';
 import { CategoryList } from '../categories/CategoryList';
 import { ShapeList } from '../shapes/ShapeList';
+import { ShapeForm } from '../shapes/ShapeForm';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { MapSettingsForm } from '../maps/MapSettingsForm';
 import { EmbedSettings } from '../maps/EmbedSettings';
 import { CsvImport } from '../import/CsvImport';
 import { GeoImport } from '../import/GeoImport';
-import { useMapStore } from '../../store/mapStore';
+import { GlobalStylePanel } from '../markers/GlobalStylePanel';
+import { shapesApi } from '../../api/shapes';
 
-type Tab = 'markers' | 'shapes' | 'categories';
+type Tab = 'markers' | 'shapes' | 'categories' | 'appearance';
 
 interface SidebarProps {
   map: MapRecord;
@@ -41,64 +44,56 @@ export function Sidebar({ map, markers, filteredMarkers, categories, shapes }: S
   const activeMarker = markers.find((m) => m.id === activeMarkerId);
   const activeShape = shapes.find((s) => s.id === activeShapeId);
 
-  // Auto-switch tab when a shape is activated
   React.useEffect(() => {
     if (activeShapeId) setTab('shapes');
   }, [activeShapeId]);
 
   return (
     <aside className={`sidebar${sidebarOpen ? '' : ' collapsed'}`}>
-      {/* Header */}
       <div className="sidebar-header">
         {activeMarker ? (
           <button
             onClick={() => setActiveMarker(null)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}
           >
-            ← Back
+            ← Tillbaka
           </button>
         ) : activeShape ? (
           <button
             onClick={() => setActiveShape(null)}
             style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}
           >
-            ← Back
+            ← Tillbaka
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <TabButton active={tab === 'markers'} onClick={() => setTab('markers')}>
-              Markers ({filteredMarkers.length})
+              Markörer ({filteredMarkers.length})
             </TabButton>
             <TabButton active={tab === 'shapes'} onClick={() => setTab('shapes')}>
-              Shapes ({shapes.length})
+              Former ({shapes.length})
             </TabButton>
             <TabButton active={tab === 'categories'} onClick={() => setTab('categories')}>
-              Categories
+              Kategorier
+            </TabButton>
+            <TabButton active={tab === 'appearance'} onClick={() => setTab('appearance')}>
+              Utseende
             </TabButton>
           </div>
         )}
         <div style={{ display: 'flex', gap: 4 }}>
-          <Button variant="ghost" size="sm" onClick={() => setCsvOpen(true)} title="Import CSV">
-            ↑ CSV
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setGeoOpen(true)} title="Import/Export GeoJSON, GPX, KML">
-            ↑ Geo
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)} title="Map settings">
-            ⚙
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setEmbedOpen(true)} title="Embed">
-            {'</>'}
-          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setCsvOpen(true)} title="Importera CSV">↑ CSV</Button>
+          <Button variant="ghost" size="sm" onClick={() => setGeoOpen(true)} title="Importera/Exportera GeoJSON, GPX, KML">↑ Geo</Button>
+          <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)} title="Kartinställningar">⚙</Button>
+          <Button variant="ghost" size="sm" onClick={() => setEmbedOpen(true)} title="Bädda in">{'</>'}</Button>
         </div>
       </div>
 
-      {/* Content */}
       <div className="sidebar-content">
         {activeMarker ? (
-          <MarkerPanel marker={activeMarker} mapId={map.id} categories={categories} />
+          <MarkerPanel key={activeMarker.id} marker={activeMarker} mapId={map.id} categories={categories} />
         ) : activeShape ? (
-          <ShapePanel shape={activeShape} mapId={map.id} categories={categories} onBack={() => setActiveShape(null)} />
+          <ShapeDetailPanel shape={activeShape} mapId={map.id} categories={categories} onBack={() => setActiveShape(null)} />
         ) : tab === 'markers' ? (
           <>
             <FilterBar categories={categories} />
@@ -106,8 +101,8 @@ export function Sidebar({ map, markers, filteredMarkers, categories, shapes }: S
               {filteredMarkers.length === 0 ? (
                 <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '24px 0' }}>
                   {markers.length === 0
-                    ? 'Click "+ Add marker" or use the drawing tools on the map'
-                    : 'No markers match the active filters'}
+                    ? 'Klicka "+ Lägg till markör" eller använd ritverktygen på kartan'
+                    : 'Inga markörer matchar de aktiva filtren'}
                 </p>
               ) : (
                 filteredMarkers.map((m) => (
@@ -118,13 +113,14 @@ export function Sidebar({ map, markers, filteredMarkers, categories, shapes }: S
           </>
         ) : tab === 'shapes' ? (
           <ShapeList mapId={map.id} shapes={shapes} categories={categories} />
-        ) : (
+        ) : tab === 'categories' ? (
           <CategoryList mapId={map.id} categories={categories} />
+        ) : (
+          <GlobalStylePanel mapId={map.id} markerCount={markers.length} />
         )}
       </div>
 
-      {/* Map settings modal */}
-      <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Map settings" width={520}>
+      <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Kartinställningar" width={520}>
         <MapSettingsForm
           existing={map}
           onSave={(updated) => { setCurrentMap(updated); setSettingsOpen(false); }}
@@ -132,55 +128,40 @@ export function Sidebar({ map, markers, filteredMarkers, categories, shapes }: S
         />
       </Modal>
 
-      {/* Embed modal */}
-      <Modal open={embedOpen} onClose={() => setEmbedOpen(false)} title="Embed map">
+      <Modal open={embedOpen} onClose={() => setEmbedOpen(false)} title="Bädda in karta">
         <EmbedSettings map={map} onMapUpdate={(updated) => setCurrentMap(updated)} />
       </Modal>
 
-      {/* CSV import modal */}
-      <Modal open={csvOpen} onClose={() => setCsvOpen(false)} title="Import CSV" width={600}>
-        <CsvImport
-          mapId={map.id}
-          categories={categories}
-          onDone={() => setCsvOpen(false)}
-        />
+      <Modal open={csvOpen} onClose={() => setCsvOpen(false)} title="Importera CSV" width={600}>
+        <CsvImport mapId={map.id} categories={categories} onDone={() => setCsvOpen(false)} />
       </Modal>
 
-      {/* Geo import/export modal */}
-      <Modal open={geoOpen} onClose={() => setGeoOpen(false)} title="Import / Export" width={520}>
-        <GeoImport
-          mapId={map.id}
-          categories={categories}
-          onDone={() => setGeoOpen(false)}
-        />
+      <Modal open={geoOpen} onClose={() => setGeoOpen(false)} title="Importera / Exportera" width={520}>
+        <GeoImport mapId={map.id} categories={categories} onDone={() => setGeoOpen(false)} />
       </Modal>
     </aside>
   );
 }
 
-// Inline shape detail panel (shown when a shape is active)
-function ShapePanel({ shape, mapId, categories, onBack }: {
+function ShapeDetailPanel({ shape, mapId, categories, onBack }: {
   shape: Shape; mapId: string; categories: Category[]; onBack: () => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const removeShape = useMapStore((s) => s.removeShape);
-  const { shapesApi } = require('../../api/shapes');
-  const { ShapeForm } = require('../shapes/ShapeForm');
-  const { Modal: ModalComp } = require('../common/Modal');
 
   async function handleDelete() {
-    if (!confirm(`Delete "${shape.title || 'this shape'}"?`)) return;
+    if (!confirm(`Ta bort "${shape.title || 'den här formen'}"?`)) return;
     await shapesApi.delete(mapId, shape.id);
     removeShape(shape.id);
     onBack();
   }
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={{ padding: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <div style={{ width: 12, height: 12, borderRadius: '50%', background: shape.color, flexShrink: 0 }} />
         <h2 style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>
-          {shape.title || (shape.type === 'polygon' ? 'Untitled polygon' : 'Untitled line')}
+          {shape.title || (shape.type === 'polygon' ? 'Namnlös polygon' : 'Namnlös linje')}
         </h2>
       </div>
 
@@ -189,7 +170,7 @@ function ShapePanel({ shape, mapId, categories, onBack }: {
       )}
 
       <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>
-        {shape.type === 'polygon' ? 'Polygon' : 'Polyline'} · {shape.coordinates.length} vertices
+        {shape.type === 'polygon' ? 'Polygon' : 'Linje'} · {shape.coordinates.length} hörn
         {shape.category && (
           <span style={{
             display: 'inline-block', marginLeft: 8,
@@ -201,18 +182,18 @@ function ShapePanel({ shape, mapId, categories, onBack }: {
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button size="sm" onClick={() => setEditOpen(true)} style={{ flex: 1 }}>Edit</Button>
-        <Button size="sm" variant="ghost" onClick={handleDelete} style={{ color: '#dc2626' }}>Delete</Button>
+        <Button size="sm" onClick={() => setEditOpen(true)} style={{ flex: 1 }}>Redigera</Button>
+        <Button size="sm" variant="ghost" onClick={handleDelete} style={{ color: '#dc2626' }}>Ta bort</Button>
       </div>
 
-      <ModalComp open={editOpen} onClose={() => setEditOpen(false)} title="Edit shape">
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Redigera form">
         <ShapeForm
           mapId={mapId}
           categories={categories}
           existing={shape}
           onClose={() => setEditOpen(false)}
         />
-      </ModalComp>
+      </Modal>
     </div>
   );
 }

@@ -17,21 +17,8 @@ export function createApp() {
     }),
   );
 
-  // CORS: restrictive for the API, permissive for embed endpoint
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        // Allow requests with no origin (e.g. curl, mobile apps, same-origin)
-        if (!origin) return callback(null, true);
-        if (config.corsOrigins.includes(origin)) return callback(null, true);
-        callback(new Error('Not allowed by CORS'));
-      },
-      credentials: true,
-    }),
-  );
-
-  // The embed endpoint must be accessible cross-origin
-  app.use('/api/embed', cors({ origin: '*' }));
+  // No auth = no need to restrict origins
+  app.use(cors({ origin: '*' }));
 
   // Rate limit all API routes
   app.use(

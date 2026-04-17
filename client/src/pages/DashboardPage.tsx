@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { MapRecord } from '@gpkarta/shared';
 import { mapsApi } from '../api/maps';
-import { useAuthStore } from '../store/authStore';
 import { Navbar } from '../components/layout/Navbar';
 import { Button } from '../components/common/Button';
 import { Modal } from '../components/common/Modal';
@@ -11,18 +10,18 @@ import { Spinner } from '../components/common/Spinner';
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const user = useAuthStore((s) => s.user);
   const [maps, setMaps] = useState<MapRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   useEffect(() => {
     mapsApi.list().then(setMaps).finally(() => setLoading(false));
   }, []);
 
   async function handleDelete(map: MapRecord) {
-    if (!confirm(`Delete "${map.title}"? This cannot be undone.`)) return;
+    if (!confirm(`Ta bort "${map.title}"? Detta kan inte ångras.`)) return;
     setDeleting(map.id);
     try {
       await mapsApi.delete(map.id);
@@ -32,21 +31,31 @@ export function DashboardPage() {
     }
   }
 
+  async function handleDuplicate(map: MapRecord) {
+    setDuplicating(map.id);
+    try {
+      const copy = await mapsApi.duplicate(map.id);
+      setMaps((prev) => [copy, ...prev]);
+    } finally {
+      setDuplicating(null);
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
       <Navbar
         actions={
           <Button size="sm" onClick={() => setCreateOpen(true)}>
-            + New map
+            + Ny karta
           </Button>
         }
       />
 
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 16px' }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>My Maps</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Mina kartor</h1>
           <p style={{ fontSize: 14, color: '#6b7280' }}>
-            {maps.length} map{maps.length !== 1 ? 's' : ''}
+            {maps.length} karta{maps.length !== 1 ? 'r' : ''}
           </p>
         </div>
 
@@ -59,11 +68,11 @@ export function DashboardPage() {
             textAlign: 'center', padding: '64px 24px',
             background: '#fff', borderRadius: 12, border: '1px dashed #e5e7eb',
           }}>
-            <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>No maps yet</p>
+            <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Inga kartor än</p>
             <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20 }}>
-              Create your first map to start adding locations
+              Skapa din första karta för att börja lägga till platser
             </p>
-            <Button onClick={() => setCreateOpen(true)}>+ Create map</Button>
+            <Button onClick={() => setCreateOpen(true)}>+ Skapa karta</Button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
@@ -73,14 +82,16 @@ export function DashboardPage() {
                 map={map}
                 onOpen={() => navigate(`/map/${map.id}`)}
                 onDelete={() => handleDelete(map)}
+                onDuplicate={() => handleDuplicate(map)}
                 deleting={deleting === map.id}
+                duplicating={duplicating === map.id}
               />
             ))}
           </div>
         )}
       </div>
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New map">
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Ny karta">
         <MapSettingsForm
           onSave={(map) => {
             setMaps((prev) => [map, ...prev]);
@@ -95,25 +106,21 @@ export function DashboardPage() {
 }
 
 function MapCard({
-  map,
-  onOpen,
-  onDelete,
-  deleting,
+  map, onOpen, onDelete, onDuplicate, deleting, duplicating,
 }: {
   map: MapRecord & { _count?: { markers: number } };
   onOpen: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   deleting: boolean;
+  duplicating: boolean;
 }) {
   return (
-    <div
-      style={{
-        background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb',
-        overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        display: 'flex', flexDirection: 'column',
-      }}
-    >
-      {/* Map preview header */}
+    <div style={{
+      background: '#fff', borderRadius: 10, border: '1px solid #e5e7eb',
+      overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+      display: 'flex', flexDirection: 'column',
+    }}>
       <div
         onClick={onOpen}
         style={{
@@ -136,16 +143,28 @@ function MapCard({
             {map.description}
           </p>
         )}
-        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#9ca3af', marginBottom: 12 }}>
-          <span>{(map as any)._count?.markers ?? 0} markers</span>
-          {map.isPublic && <span style={{ color: '#16a34a' }}>Public</span>}
-          {map.embedToken && <span style={{ color: '#7c3aed' }}>Embeddable</span>}
+        <div style={{ display: 'flex', gap: 10, fontSize: 11, color: '#9ca3af', marginBottom: 12, flexWrap: 'wrap' }}>
+          <span>{(map as any)._count?.markers ?? 0} markörer</span>
+          {map.isPublic && (
+            <a
+              href={`/map/public/${map.id}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{ color: '#16a34a', textDecoration: 'none' }}
+            >
+              Public ↗
+            </a>
+          )}
+          {map.embedToken && <span style={{ color: '#7c3aed' }}>Inbäddningsbar</span>}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button size="sm" onClick={onOpen} style={{ flex: 1 }}>Open</Button>
-          <Button size="sm" variant="ghost" loading={deleting} onClick={onDelete}
-            style={{ color: '#dc2626' }}>
-            Delete
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <Button size="sm" onClick={onOpen} style={{ flex: 1 }}>Öppna</Button>
+          <Button size="sm" variant="ghost" loading={duplicating} onClick={onDuplicate} title="Duplicate map">
+            ⧉
+          </Button>
+          <Button size="sm" variant="ghost" loading={deleting} onClick={onDelete} style={{ color: '#dc2626' }}>
+            Ta bort
           </Button>
         </div>
       </div>

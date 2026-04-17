@@ -65,7 +65,7 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
       }
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save shape');
+      setError(err.response?.data?.error || 'Det gick inte att spara formen');
     } finally {
       setLoading(false);
     }
@@ -73,34 +73,34 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
 
   return (
     <form onSubmit={handleSubmit}>
-      <FormField label="Title">
+      <FormField label="Titel">
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={shapeType === 'polyline' ? 'Route name…' : 'Area name…'}
+          placeholder={shapeType === 'polyline' ? 'Ruttnamn…' : 'Områdesnamn…'}
           autoFocus
         />
       </FormField>
 
-      <FormField label="Description">
+      <FormField label="Beskrivning">
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional description"
+          placeholder="Valfri beskrivning"
           rows={2}
         />
       </FormField>
 
-      <FormField label="Category">
+      <FormField label="Kategori">
         <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">— None —</option>
+          <option value="">— Ingen —</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
       </FormField>
 
-      <FormField label="Color">
+      <FormField label="Färg">
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {COLOR_PRESETS.map((c) => (
             <button
@@ -123,7 +123,7 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
         </div>
       </FormField>
 
-      <FormField label={`Line weight: ${weight}px`}>
+      <FormField label={`Linjebredd: ${weight}px`}>
         <input
           type="range" min={1} max={12} value={weight}
           onChange={(e) => setWeight(Number(e.target.value))}
@@ -132,7 +132,7 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
       </FormField>
 
       {shapeType === 'polygon' && (
-        <FormField label={`Fill opacity: ${Math.round(fillOpacity * 100)}%`}>
+        <FormField label={`Fyllningsopacitet: ${Math.round(fillOpacity * 100)}%`}>
           <input
             type="range" min={0} max={100} value={Math.round(fillOpacity * 100)}
             onChange={(e) => setFillOpacity(Number(e.target.value) / 100)}
@@ -141,7 +141,7 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
         </FormField>
       )}
 
-      <FormField label={`Opacity: ${Math.round(opacity * 100)}%`}>
+      <FormField label={`Opacitet: ${Math.round(opacity * 100)}%`}>
         <input
           type="range" min={10} max={100} value={Math.round(opacity * 100)}
           onChange={(e) => setOpacity(Number(e.target.value) / 100)}
@@ -152,8 +152,8 @@ export function ShapeForm({ mapId, categories, onClose, existing, pendingType, p
       {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button type="submit" loading={loading}>{isEdit ? 'Save changes' : 'Add shape'}</Button>
+        <Button type="button" variant="secondary" onClick={onClose}>Avbryt</Button>
+        <Button type="submit" loading={loading}>{isEdit ? 'Spara ändringar' : 'Lägg till form'}</Button>
       </div>
     </form>
   );

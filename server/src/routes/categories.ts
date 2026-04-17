@@ -1,15 +1,7 @@
 import { Router } from 'express';
-import {
-  listCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} from '../controllers/categories.controller';
-import { requireAuth } from '../middleware/auth';
+import { listCategories, createCategory, updateCategory, deleteCategory } from '../controllers/categories.controller';
 
 const router = Router({ mergeParams: true });
-
-router.use(requireAuth);
 
 router.get('/', listCategories);
 router.post('/', createCategory);

@@ -19,6 +19,8 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
   const [clusterMarkers, setClusterMarkers] = useState(existing?.clusterMarkers ?? false);
   const [showMinimap, setShowMinimap] = useState(existing?.showMinimap ?? false);
   const [showScaleBar, setShowScaleBar] = useState(existing?.showScaleBar ?? true);
+  const [popupBg, setPopupBg] = useState(existing?.popupBg ?? '');
+  const [popupTextColor, setPopupTextColor] = useState(existing?.popupTextColor ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,13 +38,15 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
         clusterMarkers,
         showMinimap,
         showScaleBar,
+        popupBg: popupBg || null,
+        popupTextColor: popupTextColor || null,
       };
       const map = existing
         ? await mapsApi.update(existing.id, payload)
         : await mapsApi.create(payload);
       onSave(map);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save map');
+      setError(err.response?.data?.error || 'Det gick inte att spara kartan');
     } finally {
       setLoading(false);
     }
@@ -50,26 +54,26 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
 
   return (
     <form onSubmit={handleSubmit}>
-      <FormField label="Title" required>
+      <FormField label="Titel" required>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="My Map"
+          placeholder="Min karta"
           required
           autoFocus
         />
       </FormField>
 
-      <FormField label="Description">
+      <FormField label="Beskrivning">
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What is this map about?"
+          placeholder="Vad handlar den här kartan om?"
           rows={2}
         />
       </FormField>
 
-      <FormField label="Map style">
+      <FormField label="Kartstil">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {TILE_LAYERS.map((t) => (
             <button
@@ -105,31 +109,82 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
         </div>
       </FormField>
 
-      <FormField label="Display options">
+      <FormField label="Visningsalternativ">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
-            Make this map publicly viewable (shareable link)
+            Gör kartan offentlig (delningsbar länk)
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={clusterMarkers} onChange={(e) => setClusterMarkers(e.target.checked)} />
-            Cluster nearby markers
+            Gruppera närliggande markörer
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={showScaleBar} onChange={(e) => setShowScaleBar(e.target.checked)} />
-            Show scale bar
+            Visa skalstock
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={showMinimap} onChange={(e) => setShowMinimap(e.target.checked)} />
-            Show minimap
+            Visa minikarta
           </label>
+        </div>
+      </FormField>
+
+      <FormField label="Popup-stil">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 12, color: '#374151', width: 110 }}>Bakgrundsfärg</span>
+            <input
+              type="color"
+              value={popupBg || '#ffffff'}
+              onChange={(e) => setPopupBg(e.target.value)}
+              style={{ width: 36, height: 28, padding: 2, border: '1px solid #e5e7eb', borderRadius: 4, cursor: 'pointer' }}
+            />
+            {popupBg && (
+              <button
+                type="button"
+                onClick={() => setPopupBg('')}
+                style={{ fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Återställ
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 12, color: '#374151', width: 110 }}>Textfärg</span>
+            <input
+              type="color"
+              value={popupTextColor || '#111827'}
+              onChange={(e) => setPopupTextColor(e.target.value)}
+              style={{ width: 36, height: 28, padding: 2, border: '1px solid #e5e7eb', borderRadius: 4, cursor: 'pointer' }}
+            />
+            {popupTextColor && (
+              <button
+                type="button"
+                onClick={() => setPopupTextColor('')}
+                style={{ fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Återställ
+              </button>
+            )}
+          </div>
+          {(popupBg || popupTextColor) && (
+            <div style={{
+              padding: '8px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+              background: popupBg || '#ffffff',
+              color: popupTextColor || '#111827',
+              border: '1px solid #e5e7eb',
+            }}>
+              Förhandsgranskning av popup-text
+            </div>
+          )}
         </div>
       </FormField>
 
       {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button type="submit" loading={loading}>{existing ? 'Save changes' : 'Create map'}</Button>
+        <Button type="button" variant="secondary" onClick={onClose}>Avbryt</Button>
+        <Button type="submit" loading={loading}>{existing ? 'Spara ändringar' : 'Skapa karta'}</Button>
       </div>
     </form>
   );

@@ -31,7 +31,7 @@ export function EmbedSettings({ map, onMapUpdate }: EmbedSettingsProps) {
   }
 
   async function handleRevoke() {
-    if (!confirm('Revoke embed token? Existing iframes will stop working.')) return;
+    if (!confirm('Återkalla inbäddningstoken? Befintliga iframes slutar fungera.')) return;
     setLoading(true);
     try {
       await mapsApi.revokeEmbedToken(map.id);
@@ -51,12 +51,12 @@ export function EmbedSettings({ map, onMapUpdate }: EmbedSettingsProps) {
   return (
     <div>
       <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 14, lineHeight: 1.6 }}>
-        Generate an embed token to share this map as a read-only iframe in external websites.
+        Generera en inbäddningstoken för att dela kartan som en skrivskyddad iframe på externa webbplatser.
       </p>
 
       {!embedToken ? (
         <Button onClick={handleGenerate} loading={loading} variant="secondary">
-          Generate embed token
+          Generera inbäddningstoken
         </Button>
       ) : (
         <>
@@ -69,12 +69,12 @@ export function EmbedSettings({ map, onMapUpdate }: EmbedSettingsProps) {
           </div>
 
           <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 10 }}>
-            Customise with URL params: <code>?zoom=12&hideControls=true&category=id1,id2</code>
+            Anpassa med URL-parametrar: <code>?zoom=12&hideControls=true&category=id1,id2</code>
           </p>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <Button size="sm" onClick={handleCopy} variant="secondary">
-              {copied ? 'Copied!' : 'Copy iframe code'}
+              {copied ? 'Kopierat!' : 'Kopiera iframe-kod'}
             </Button>
             <Button
               size="sm"
@@ -83,7 +83,7 @@ export function EmbedSettings({ map, onMapUpdate }: EmbedSettingsProps) {
               onClick={handleRevoke}
               loading={loading}
             >
-              Revoke token
+              Återkalla token
             </Button>
           </div>
         </>

@@ -31,7 +31,7 @@ export async function getPublicMap(req: Request, res: Response, next: NextFuncti
     if (!map) throw AppError.notFound('Map not found');
     if (!map.isPublic) throw AppError.forbidden();
 
-    const { ownerId, embedToken, ...publicMap } = map;
+    const { embedToken, ...publicMap } = map;
     res.json({ data: { ...publicMap, shapes: publicMap.shapes.map(parseShape) } });
   } catch (err) {
     next(err);

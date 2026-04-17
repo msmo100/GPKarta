@@ -22,7 +22,7 @@ export function MarkerPanel({ marker, mapId, categories }: MarkerPanelProps) {
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
-    if (!confirm(`Delete "${marker.title}"?`)) return;
+    if (!confirm(`Ta bort "${marker.title}"?`)) return;
     setDeleting(true);
     try {
       await markersApi.delete(mapId, marker.id);
@@ -89,15 +89,15 @@ export function MarkerPanel({ marker, mapId, categories }: MarkerPanelProps) {
 
       <p style={{ fontSize: 11, color: '#9ca3af', marginBottom: 16 }}>
         {marker.lat.toFixed(5)}, {marker.lng.toFixed(5)}
-        {' · '}Added {new Date(marker.createdAt).toLocaleDateString()}
+        {' · '}Tillagd {new Date(marker.createdAt).toLocaleDateString()}
       </p>
 
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>Edit</Button>
-        <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>Delete</Button>
+        <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>Redigera</Button>
+        <Button variant="danger" size="sm" loading={deleting} onClick={handleDelete}>Ta bort</Button>
       </div>
 
-      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit marker">
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Redigera markör">
         <MarkerForm
           mapId={mapId}
           categories={categories}

@@ -1,8 +1,7 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { AppError } from '../utils/errors';
-import { AuthRequest } from '../middleware/auth';
 
 const categorySchema = z.object({
   name: z.string().min(1).max(100),
@@ -10,16 +9,15 @@ const categorySchema = z.object({
   icon: z.string().max(50).optional(),
 });
 
-async function assertMapOwner(mapId: string, userId: string) {
+async function assertMapExists(mapId: string) {
   const map = await db.map.findUnique({ where: { id: mapId } });
   if (!map) throw AppError.notFound('Map not found');
-  if (map.ownerId !== userId) throw AppError.forbidden();
   return map;
 }
 
-export async function listCategories(req: AuthRequest, res: Response, next: NextFunction) {
+export async function listCategories(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const categories = await db.category.findMany({
       where: { mapId: req.params.mapId },
       orderBy: { name: 'asc' },
@@ -30,46 +28,39 @@ export async function listCategories(req: AuthRequest, res: Response, next: Next
   }
 }
 
-export async function createCategory(req: AuthRequest, res: Response, next: NextFunction) {
+export async function createCategory(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const data = categorySchema.parse(req.body);
-    const category = await db.category.create({
-      data: { ...data, mapId: req.params.mapId },
-    });
+    const category = await db.category.create({ data: { ...data, mapId: req.params.mapId } });
     res.status(201).json({ data: category });
   } catch (err) {
     next(err);
   }
 }
 
-export async function updateCategory(req: AuthRequest, res: Response, next: NextFunction) {
+export async function updateCategory(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const existing = await db.category.findFirst({
       where: { id: req.params.categoryId, mapId: req.params.mapId },
     });
     if (!existing) throw AppError.notFound('Category not found');
-
     const data = categorySchema.partial().parse(req.body);
-    const category = await db.category.update({
-      where: { id: req.params.categoryId },
-      data,
-    });
+    const category = await db.category.update({ where: { id: req.params.categoryId }, data });
     res.json({ data: category });
   } catch (err) {
     next(err);
   }
 }
 
-export async function deleteCategory(req: AuthRequest, res: Response, next: NextFunction) {
+export async function deleteCategory(req: Request, res: Response, next: NextFunction) {
   try {
-    await assertMapOwner(req.params.mapId, req.user!.id);
+    await assertMapExists(req.params.mapId);
     const existing = await db.category.findFirst({
       where: { id: req.params.categoryId, mapId: req.params.mapId },
     });
     if (!existing) throw AppError.notFound('Category not found');
-
     await db.category.delete({ where: { id: req.params.categoryId } });
     res.status(204).send();
   } catch (err) {

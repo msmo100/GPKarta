@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import authRoutes from './auth';
 import mapsRoutes from './maps';
 import markersRoutes from './markers';
 import shapesRoutes from './shapes';
@@ -12,7 +11,6 @@ const router = Router();
 
 router.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
-router.use('/auth', authRoutes);
 router.use('/maps', mapsRoutes);
 router.use('/maps/:mapId/markers', markersRoutes);
 router.use('/maps/:mapId/shapes', shapesRoutes);

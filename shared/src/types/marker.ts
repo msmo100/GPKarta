@@ -22,6 +22,18 @@ export interface Marker {
   shape: MarkerShape;
   markerSize: MarkerSize;
   markerIcon: string | null;
+  color: string | null;
+  strokeColor: string | null;
+  strokeWidth: number;
+  opacity: number;
+  videoUrl: string | null;
+  imageUrl: string | null;
+  genderVictim: string | null;
+  ageVictim: number | null;
+  genderPerpetrator: string | null;
+  punishment: string | null;
+  punishmentYears: number | null;
+  region: string | null;
   createdAt: string;
   updatedAt: string;
   images: MarkerImage[];
@@ -43,6 +55,18 @@ export interface CreateMarkerInput {
   shape?: MarkerShape;
   markerSize?: MarkerSize;
   markerIcon?: string;
+  color?: string | null;
+  strokeColor?: string | null;
+  strokeWidth?: number;
+  opacity?: number;
+  videoUrl?: string | null;
+  imageUrl?: string | null;
+  genderVictim?: string | null;
+  ageVictim?: number | null;
+  genderPerpetrator?: string | null;
+  punishment?: string | null;
+  punishmentYears?: number | null;
+  region?: string | null;
 }
 
 export interface UpdateMarkerInput {
@@ -55,4 +79,16 @@ export interface UpdateMarkerInput {
   shape?: MarkerShape;
   markerSize?: MarkerSize;
   markerIcon?: string | null;
+  color?: string | null;
+  strokeColor?: string | null;
+  strokeWidth?: number;
+  opacity?: number;
+  videoUrl?: string | null;
+  imageUrl?: string | null;
+  genderVictim?: string | null;
+  ageVictim?: number | null;
+  genderPerpetrator?: string | null;
+  punishment?: string | null;
+  punishmentYears?: number | null;
+  region?: string | null;
 }

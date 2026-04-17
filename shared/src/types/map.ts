@@ -7,7 +7,6 @@ export type TileLayerKey =
 
 export interface MapRecord {
   id: string;
-  ownerId: string;
   title: string;
   description: string | null;
   isPublic: boolean;
@@ -19,6 +18,8 @@ export interface MapRecord {
   clusterMarkers: boolean;
   showMinimap: boolean;
   showScaleBar: boolean;
+  popupBg: string | null;
+  popupTextColor: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +35,8 @@ export interface CreateMapInput {
   clusterMarkers?: boolean;
   showMinimap?: boolean;
   showScaleBar?: boolean;
+  popupBg?: string | null;
+  popupTextColor?: string | null;
 }
 
 export interface UpdateMapInput {
@@ -47,4 +50,6 @@ export interface UpdateMapInput {
   clusterMarkers?: boolean;
   showMinimap?: boolean;
   showScaleBar?: boolean;
+  popupBg?: string | null;
+  popupTextColor?: string | null;
 }

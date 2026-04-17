@@ -29,4 +29,17 @@ export const markersApi = {
     apiClient
       .post<{ data: Marker[] }>(`/maps/${mapId}/markers/bulk`, { markers })
       .then((r) => r.data.data),
+
+  bulkStyle: (mapId: string, style: {
+    color?: string | null;
+    strokeColor?: string | null;
+    strokeWidth?: number;
+    opacity?: number;
+    shape?: string;
+    markerSize?: string;
+    markerIcon?: string | null;
+  }) =>
+    apiClient
+      .patch<{ data: { updated: number } }>(`/maps/${mapId}/markers/bulk-style`, style)
+      .then((r) => r.data.data),
 };

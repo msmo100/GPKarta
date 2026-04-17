@@ -31,14 +31,19 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
   const [shape, setShape] = useState<MarkerShape>(existing?.shape ?? 'pin');
   const [markerSize, setMarkerSize] = useState<MarkerSize>(existing?.markerSize ?? 'md');
   const [markerIcon, setMarkerIcon] = useState(existing?.markerIcon ?? '');
+  const [videoUrl, setVideoUrl] = useState(existing?.videoUrl ?? '');
+  const [color, setColor] = useState<string | null>(existing?.color ?? null);
+  const [strokeColor, setStrokeColor] = useState<string | null>(existing?.strokeColor ?? null);
+  const [strokeWidth, setStrokeWidth] = useState(existing?.strokeWidth ?? 1.5);
+  const [opacity, setOpacity] = useState(existing?.opacity ?? 1.0);
   const [showStyle, setShowStyle] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isEdit = !!existing;
 
-  // Derive preview colour from selected category
-  const previewColor = categories.find((c) => c.id === categoryId)?.color ?? '#2563eb';
+  // Derive category colour for the style picker's "use category" fallback
+  const categoryColor = categories.find((c) => c.id === categoryId)?.color ?? '#2563eb';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +51,14 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
     setLoading(true);
     setError('');
     try {
-      const styleFields = { shape, markerSize, markerIcon: markerIcon || undefined };
+      const styleFields = {
+        shape, markerSize, markerIcon: markerIcon || undefined,
+        color: color || null,
+        strokeColor: strokeColor || null,
+        strokeWidth,
+        opacity,
+        videoUrl: videoUrl.trim() || null,
+      };
       if (isEdit) {
         const updated = await markersApi.update(mapId, existing.id, {
           title: title.trim(),
@@ -71,7 +83,7 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
       }
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save marker');
+      setError(err.response?.data?.error || 'Det gick inte att spara markören');
     } finally {
       setLoading(false);
     }
@@ -79,39 +91,48 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
 
   return (
     <form onSubmit={handleSubmit}>
-      <FormField label="Title" required>
+      <FormField label="Titel" required>
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Marker title"
+          placeholder="Markörens titel"
           required
           autoFocus
         />
       </FormField>
 
-      <FormField label="Description">
+      <FormField label="Beskrivning">
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What happened here?"
+          placeholder="Vad hände här?"
           rows={3}
         />
       </FormField>
 
-      <FormField label="Category">
+      <FormField label="Kategori">
         <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">— None —</option>
+          <option value="">— Ingen —</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
       </FormField>
 
-      <FormField label="Date">
+      <FormField label="Datum">
         <Input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+        />
+      </FormField>
+
+      <FormField label="Video-URL (valfri)">
+        <Input
+          type="url"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="YouTube, Vimeo, eller direkt .mp4-länk…"
         />
       </FormField>
 
@@ -127,26 +148,34 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
           }}
         >
           <span style={{ fontSize: 11, transition: 'transform 0.15s', transform: showStyle ? 'rotate(90deg)' : 'none' }}>▶</span>
-          Appearance
+          Utseende
         </button>
 
         {showStyle && (
           <div style={{ marginTop: 12, padding: 14, background: '#f8fafc', borderRadius: 8, border: '1px solid #e5e7eb' }}>
             <MarkerStylePicker
-              color={previewColor}
+              categoryColor={categoryColor}
+              color={color}
               shape={shape}
               markerSize={markerSize}
               markerIcon={markerIcon}
+              strokeColor={strokeColor}
+              strokeWidth={strokeWidth}
+              opacity={opacity}
+              onColorChange={setColor}
               onShapeChange={setShape}
               onSizeChange={setMarkerSize}
               onIconChange={setMarkerIcon}
+              onStrokeColorChange={setStrokeColor}
+              onStrokeWidthChange={setStrokeWidth}
+              onOpacityChange={setOpacity}
             />
           </div>
         )}
       </div>
 
       {isEdit && (
-        <FormField label="Images">
+        <FormField label="Bilder">
           <ImageUpload
             markerId={existing.id}
             images={images}
@@ -158,8 +187,8 @@ export function MarkerForm({ mapId, categories, onClose, existing, pendingLat, p
       {error && <p style={{ color: '#dc2626', fontSize: 13, marginBottom: 10 }}>{error}</p>}
 
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button type="submit" loading={loading}>{isEdit ? 'Save changes' : 'Add marker'}</Button>
+        <Button type="button" variant="secondary" onClick={onClose}>Avbryt</Button>
+        <Button type="submit" loading={loading}>{isEdit ? 'Spara ändringar' : 'Lägg till markör'}</Button>
       </div>
     </form>
   );
