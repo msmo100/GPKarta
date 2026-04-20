@@ -24,6 +24,7 @@ export function createApp() {
           scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
           styleSrc: ["'self'", "'unsafe-inline'"],
           workerSrc: ["'self'", 'blob:'],
+          frameAncestors: ['*'],
         },
       },
     }),
