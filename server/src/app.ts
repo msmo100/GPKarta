@@ -15,6 +15,7 @@ export function createApp() {
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
       frameguard: false,
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
