@@ -10,7 +10,7 @@ import { errorHandler } from './middleware/errorHandler';
 export function createApp() {
   const app = express();
 
-  // Security headers
+  // Scurity headers
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow serving images cross-origin
