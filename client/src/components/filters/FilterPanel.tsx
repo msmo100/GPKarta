@@ -7,6 +7,7 @@ interface FilterPanelProps {
   markers: Marker[];
   totalCount: number;
   filteredCount: number;
+  hideable?: boolean;
 }
 
 // ── Persistence helpers ───────────────────────────────────────────────────────
@@ -149,7 +150,7 @@ function RangeSlider({ min, max, valueMin, valueMax, onChange }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function FilterPanel({ categories, markers, totalCount, filteredCount }: FilterPanelProps) {
+export function FilterPanel({ categories, markers, totalCount, filteredCount, hideable = true }: FilterPanelProps) {
   const {
     filterPanelOpen, toggleFilterPanel,
     filterCategoryIds, filterFrom, filterTo,
@@ -284,7 +285,7 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount }: 
 
             {/* Dynamic field filters */}
             {visibleFields.map((fd) => (
-              <Section key={fd.key} title={fd.label} onHide={() => hideField(fd.key)}>
+              <Section key={fd.key} title={fd.label} onHide={hideable ? () => hideField(fd.key) : undefined}>
                 {fd.kind === 'chips' ? (
                   <ChipGroup
                     options={fd.options}
@@ -304,7 +305,7 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount }: 
             ))}
 
             {/* Hidden fields footer */}
-            {hiddenFields.length > 0 && (
+            {hideable && hiddenFields.length > 0 && (
               <div style={{ padding: '8px 14px', borderTop: '1px solid #f3f4f6' }}>
                 <button
                   onClick={() => setShowingHidden((v) => !v)}
