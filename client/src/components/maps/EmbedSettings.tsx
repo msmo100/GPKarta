@@ -17,7 +17,7 @@ export function EmbedSettings({ map, onMapUpdate }: EmbedSettingsProps) {
     ? `${window.location.origin}/embed/${embedToken}`
     : null;
   const iframeCode = embedSrc
-    ? `<iframe id="gpkarta-embed" src="${embedSrc}" frameborder="0" allowfullscreen style="width:100vw;height:70vh;max-width:100%;display:block;border:none;"></iframe>\n<script>(function(){var f=document.getElementById('gpkarta-embed');if(f&&f.parentElement){f.parentElement.style.maxWidth='100%';f.parentElement.style.padding='0';}})();</script>`
+    ? `<div style="width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);"><iframe src="${embedSrc}" style="width:100%;height:70vh;border:none;display:block;" allowfullscreen></iframe></div>`
     : null;
 
   async function handleGenerate() {
