@@ -8,11 +8,9 @@ import { Select } from '../common/FormField';
 // ── CSV parsing ──────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  // Strip UTF-8 BOM if present
   const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   if (!clean.trim()) return { headers: [], rows: [] };
 
-  // Auto-detect delimiter from the first line (outside of any quotes)
   const firstNewline = clean.indexOf('\n');
   const firstLine = firstNewline === -1 ? clean : clean.slice(0, firstNewline);
   const commas = (firstLine.match(/,/g) ?? []).length;
@@ -22,7 +20,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
                : semis > commas               ? ';'
                : ',';
 
-  // Full-document character-level parser — handles multi-line quoted fields
   const records: string[][] = [];
   let cur = '';
   let inQuote = false;
@@ -31,19 +28,18 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   for (let i = 0; i < clean.length; i++) {
     const ch = clean[i];
     if (ch === '"') {
-      if (inQuote && clean[i + 1] === '"') { cur += '"'; i++; }  // escaped quote ""
+      if (inQuote && clean[i + 1] === '"') { cur += '"'; i++; }
       else inQuote = !inQuote;
     } else if (ch === delim && !inQuote) {
       row.push(cur.trim()); cur = '';
     } else if (ch === '\n' && !inQuote) {
       row.push(cur.trim()); cur = '';
-      if (row.some((f) => f !== '')) records.push(row);  // skip blank lines
+      if (row.some((f) => f !== '')) records.push(row);
       row = [];
     } else {
       cur += ch;
     }
   }
-  // flush last field / row
   row.push(cur.trim());
   if (row.some((f) => f !== '')) records.push(row);
 
@@ -71,12 +67,27 @@ const FIELD_ALIASES: Record<string, string> = {
   region: 'region',
 };
 
+// Fields that are handled as named marker properties (not stored in customFields)
+const KNOWN_FIELDS = new Set(Object.values(FIELD_ALIASES));
+
+// Common GIS/shapefile artifact columns that are never useful as filters
+const IMPORT_BLOCKLIST = new Set([
+  'admin_units', 'admin units', 'admin_unit', 'admin unit',
+  'objectid', 'object_id', 'fid', 'gid', 'globalid', 'global_id',
+  'shape_area', 'shape_leng', 'shape_length', 'shape_len',
+  'geom', 'geometry', 'wkt', 'wkb',
+  'uuid', 'guid',
+  'created_user', 'created_date', 'last_edited_user', 'last_edited_date',
+  'st_area(shape)', 'st_length(shape)',
+]);
+
 function autoMap(headers: string[]): Record<string, string> {
   const mapping: Record<string, string> = {};
   for (const h of headers) {
     const field = FIELD_ALIASES[h];
     if (field && !Object.values(mapping).includes(field)) mapping[h] = field;
-    else mapping[h] = '';
+    else if (IMPORT_BLOCKLIST.has(h)) mapping[h] = '(ignore)';
+    else mapping[h] = '(custom field)';
   }
   return mapping;
 }
@@ -97,11 +108,13 @@ interface PreviewRow {
   punishment?: string;
   punishmentYears?: number;
   region?: string;
+  customFields?: Record<string, string | number | null>;
   valid: boolean;
   error?: string;
 }
 
-const TARGET_FIELDS = ['title', 'lat', 'lng', 'description', 'date', 'category', 'imageUrl', 'genderVictim', 'ageVictim', 'genderPerpetrator', 'punishment', 'punishmentYears', 'region', '(ignore)'];
+const KNOWN_TARGET_FIELDS = ['title', 'lat', 'lng', 'description', 'date', 'category', 'imageUrl', 'genderVictim', 'ageVictim', 'genderPerpetrator', 'punishment', 'punishmentYears', 'region'];
+const TARGET_FIELDS = [...KNOWN_TARGET_FIELDS, '(custom field)', '(ignore)'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -137,7 +150,6 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
     const r1 = new FileReader();
     r1.onload = (e) => {
       const text = e.target?.result as string;
-      // If UTF-8 produced replacement chars, re-try as Windows-1252 (common for Swedish Excel exports)
       if (text.includes('\uFFFD')) {
         const r2 = new FileReader();
         r2.onload = (e2) => process(e2.target?.result as string);
@@ -159,7 +171,6 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
 
       const latStr = get('lat');
       const lngStr = get('lng');
-      // Normalise decimal separator: Swedish CSVs use comma (57,708 → 57.708)
       const lat = parseFloat(latStr.replace(',', '.'));
       const lng = parseFloat(lngStr.replace(',', '.'));
       const title = get('title') || `Row ${rows.indexOf(row) + 2}`;
@@ -178,6 +189,16 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
         date = isNaN(d.getTime()) ? undefined : d.toISOString();
       }
 
+      // Collect custom fields: columns mapped to '(custom field)'
+      const customFields: Record<string, string | number | null> = {};
+      for (const [col, target] of Object.entries(colMap)) {
+        if (target !== '(custom field)') continue;
+        const val = (row[headers.indexOf(col)] ?? '').trim();
+        if (!val) continue;
+        const num = parseFloat(val.replace(',', '.'));
+        customFields[col] = isNaN(num) ? val : num;
+      }
+
       const ageStr = get('ageVictim');
       const pyStr = get('punishmentYears');
       return {
@@ -194,6 +215,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
         punishment: get('punishment') || undefined,
         punishmentYears: pyStr ? (parseFloat(pyStr.replace(',', '.')) || undefined) : undefined,
         region: get('region') || undefined,
+        customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
         valid: true,
       };
     });
@@ -206,11 +228,9 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
   async function handleImport() {
     setStep('importing');
 
-    // Build or reuse category map
     const catMap: Record<string, string> = {};
     for (const cat of categories) catMap[cat.name.toLowerCase()] = cat.id;
 
-    // Create missing categories on the fly
     const missingNames = [
       ...new Set(
         preview
@@ -249,6 +269,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
       punishment: r.punishment,
       punishmentYears: r.punishmentYears,
       region: r.region,
+      customFields: r.customFields,
     }));
 
     try {
@@ -266,6 +287,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
 
   const validCount = preview.filter((r) => r.valid).length;
   const invalidCount = preview.length - validCount;
+  const customColCount = Object.values(colMap).filter((v) => v === '(custom field)').length;
 
   // ── Render ──
   if (importResult) {
@@ -307,6 +329,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, lineHeight: 1.6 }}>
             Upload a CSV file with at least <strong>lat</strong> and <strong>lng</strong> columns.
             Optional columns: <code>title</code>, <code>description</code>, <code>date</code>, <code>category</code>.
+            Any extra columns become filterable custom fields automatically.
           </p>
 
           <div
@@ -333,8 +356,9 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
 
           <div style={{ marginTop: 16, background: '#f0f9ff', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#0369a1' }}>
             <strong>Expected format:</strong><br />
-            <code>lat,lng,title,description,date,category</code><br />
-            <code>57.708,11.974,"My location","Some notes",2024-03-15,Incidents</code>
+            <code>lat,lng,title,description,date,category,weapon_type</code><br />
+            <code>57.708,11.974,"My location","Some notes",2024-03-15,Incidents,knife</code><br />
+            <span style={{ marginTop: 4, display: 'block' }}>Extra columns like <code>weapon_type</code> become smart filters automatically.</span>
           </div>
         </div>
       )}
@@ -344,7 +368,13 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
         <div>
           <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 14 }}>
             Map your CSV columns to marker fields. <strong>lat</strong> and <strong>lng</strong> are required.
+            Columns set to <strong>(custom field)</strong> will be saved and appear as smart filters.
           </p>
+          {customColCount > 0 && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '7px 12px', fontSize: 12, color: '#15803d', marginBottom: 12 }}>
+              {customColCount} column{customColCount > 1 ? 's' : ''} will be saved as custom fields and become filterable.
+            </div>
+          )}
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
@@ -367,8 +397,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
                         onChange={(e) => setColMap((m) => ({ ...m, [h]: e.target.value }))}
                         style={{ fontSize: 12, padding: '4px 8px', height: 30 }}
                       >
-                        <option value="(ignore)">(ignore)</option>
-                        {TARGET_FIELDS.filter((f) => f !== '(ignore)').map((f) => (
+                        {TARGET_FIELDS.map((f) => (
                           <option key={f} value={f}>{f}</option>
                         ))}
                       </Select>
@@ -394,10 +423,11 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
       {/* ── Step 3: Preview ── */}
       {step === 'preview' && (
         <div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
             <Pill color="#16a34a">{validCount} ready to import</Pill>
             {invalidCount > 0 && <Pill color="#dc2626">{invalidCount} will be skipped</Pill>}
             {preview.length > 500 && <Pill color="#d97706">Showing first 500 rows</Pill>}
+            {customColCount > 0 && <Pill color="#7c3aed">{customColCount} custom field{customColCount > 1 ? 's' : ''}</Pill>}
           </div>
 
           <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
@@ -410,6 +440,7 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
                   <th style={th}>Lng</th>
                   <th style={th}>Category</th>
                   <th style={th}>Date</th>
+                  {customColCount > 0 && <th style={th}>Custom fields</th>}
                 </tr>
               </thead>
               <tbody>
@@ -423,6 +454,11 @@ export function CsvImport({ mapId, categories, onDone }: CsvImportProps) {
                     <td style={td}>{row.valid ? row.lng.toFixed(4) : '—'}</td>
                     <td style={td}>{row.categoryName ?? '—'}</td>
                     <td style={td}>{row.date ? new Date(row.date).toLocaleDateString() : '—'}</td>
+                    {customColCount > 0 && (
+                      <td style={{ ...td, color: '#7c3aed', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row.customFields ? Object.entries(row.customFields).map(([k, v]) => `${k}: ${v}`).join(', ') : '—'}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

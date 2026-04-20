@@ -34,6 +34,7 @@ export interface Marker {
   punishment: string | null;
   punishmentYears: number | null;
   region: string | null;
+  customFields: Record<string, string | number | null> | null;
   createdAt: string;
   updatedAt: string;
   images: MarkerImage[];

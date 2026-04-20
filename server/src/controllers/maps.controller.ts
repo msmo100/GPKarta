@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
 import { AppError } from '../utils/errors';
 
-const TILE_LAYERS = ['osm', 'carto-light', 'carto-light-nolabels', 'carto-dark', 'carto-dark-nolabels'] as const;
+const TILE_LAYERS = ['osm', 'carto-light', 'carto-light-nolabels', 'carto-dark', 'carto-dark-nolabels', 'carto-voyager', 'esri-satellite', 'esri-topo', 'opentopomap'] as const;
 
 const createMapSchema = z.object({
   title: z.string().min(1).max(200),
@@ -15,6 +15,8 @@ const createMapSchema = z.object({
   defaultZoom: z.number().int().min(1).max(20).optional(),
   tileLayer: z.enum(TILE_LAYERS).optional(),
   clusterMarkers: z.boolean().optional(),
+  clusterColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
+  clusterBorderColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
   showMinimap: z.boolean().optional(),
   showScaleBar: z.boolean().optional(),
   popupBg: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),

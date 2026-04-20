@@ -17,6 +17,8 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
   const [isPublic, setIsPublic] = useState(existing?.isPublic ?? false);
   const [tileLayer, setTileLayer] = useState<TileLayerKey>(existing?.tileLayer ?? 'osm');
   const [clusterMarkers, setClusterMarkers] = useState(existing?.clusterMarkers ?? false);
+  const [clusterColor, setClusterColor] = useState(existing?.clusterColor ?? '#2563eb');
+  const [clusterBorderColor, setClusterBorderColor] = useState(existing?.clusterBorderColor ?? '#ffffff');
   const [showMinimap, setShowMinimap] = useState(existing?.showMinimap ?? false);
   const [showScaleBar, setShowScaleBar] = useState(existing?.showScaleBar ?? true);
   const [popupBg, setPopupBg] = useState(existing?.popupBg ?? '');
@@ -36,6 +38,8 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
         isPublic,
         tileLayer,
         clusterMarkers,
+        clusterColor: clusterMarkers ? clusterColor : null,
+        clusterBorderColor: clusterMarkers ? clusterBorderColor : null,
         showMinimap,
         showScaleBar,
         popupBg: popupBg || null,
@@ -119,6 +123,28 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
             <input type="checkbox" checked={clusterMarkers} onChange={(e) => setClusterMarkers(e.target.checked)} />
             Gruppera närliggande markörer
           </label>
+          {clusterMarkers && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 12, color: '#374151', width: 90 }}>Klusterfärg</span>
+                <input
+                  type="color"
+                  value={clusterColor}
+                  onChange={(e) => setClusterColor(e.target.value)}
+                  style={{ width: 36, height: 28, padding: 2, border: '1px solid #e5e7eb', borderRadius: 4, cursor: 'pointer' }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 12, color: '#374151', width: 90 }}>Kantlinjefärg</span>
+                <input
+                  type="color"
+                  value={clusterBorderColor}
+                  onChange={(e) => setClusterBorderColor(e.target.value)}
+                  style={{ width: 36, height: 28, padding: 2, border: '1px solid #e5e7eb', borderRadius: 4, cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+          )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
             <input type="checkbox" checked={showScaleBar} onChange={(e) => setShowScaleBar(e.target.checked)} />
             Visa skalstock

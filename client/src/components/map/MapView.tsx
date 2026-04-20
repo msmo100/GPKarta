@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import L from 'leaflet';
+import 'leaflet.markercluster';
 import type { MapRecord, Marker, Shape, MarkerShape, MarkerSize } from '@gpkarta/shared';
 import { MarkerLayer } from './MarkerLayer';
 import { MapClickHandler } from './MapClickHandler';
@@ -120,7 +121,7 @@ function MiniMap({ tileUrl, attribution }: { tileUrl: string; attribution: strin
 }
 
 // Clustered marker layer (imperative, bypasses react-leaflet)
-function ClusteredMarkerLayer({ markers }: { markers: Marker[] }) {
+function ClusteredMarkerLayer({ markers, clusterColor, clusterBorderColor }: { markers: Marker[]; clusterColor: string; clusterBorderColor: string }) {
   const map = useMap();
   const activeMarkerId = useUiStore((s) => s.activeMarkerId);
   const setActiveMarker = useUiStore((s) => s.setActiveMarker);
@@ -128,7 +129,18 @@ function ClusteredMarkerLayer({ markers }: { markers: Marker[] }) {
   const openMarkerPopup = useUiStore((s) => s.openMarkerPopup);
 
   useEffect(() => {
-    const cluster = (L as any).markerClusterGroup({ maxClusterRadius: 40 });
+    const cluster = (L as any).markerClusterGroup({
+      maxClusterRadius: 40,
+      iconCreateFunction: (c: any) => {
+        const count = c.getChildCount();
+        return L.divIcon({
+          html: `<div style="width:36px;height:36px;border-radius:50%;background:${clusterColor};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:3px solid ${clusterBorderColor};box-shadow:0 2px 6px rgba(0,0,0,0.25)">${count}</div>`,
+          className: '',
+          iconSize: L.point(36, 36),
+          iconAnchor: L.point(18, 18),
+        });
+      },
+    });
 
     markers.forEach((m) => {
       const color = m.color ?? m.category?.color ?? '#2563eb';
@@ -184,7 +196,7 @@ export function MapView({ map, markers, filteredMarkers, shapes = [], readOnly =
 
         {/* Markers — clustered or regular */}
         {map.clusterMarkers
-          ? <ClusteredMarkerLayer markers={filteredMarkers} />
+          ? <ClusteredMarkerLayer markers={filteredMarkers} clusterColor={map.clusterColor ?? '#2563eb'} clusterBorderColor={map.clusterBorderColor ?? '#ffffff'} />
           : <MarkerLayer markers={filteredMarkers} readOnly={readOnly} />
         }
 

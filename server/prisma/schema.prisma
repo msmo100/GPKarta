@@ -28,6 +28,10 @@ model Map {
   popupBg        String?
   popupTextColor String?
 
+  // Cluster style
+  clusterColor       String?
+  clusterBorderColor String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -74,6 +78,9 @@ model Marker {
   punishment        String?
   punishmentYears   Float?
   region            String?
+
+  // Arbitrary extra fields from CSV import (stored as JSON string)
+  customFields      String?
 
   // Visual style
   shape       String  @default("pin")

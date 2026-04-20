@@ -27,9 +27,7 @@ export function MapEditorPage() {
     sidebarOpen, toggleSidebar, isAddingMarker, setAddingMarker,
     modal, closeModal, pendingMarker, pendingShape,
     filterCategoryIds, filterFrom, filterTo,
-    filterGenderVictim, filterAgeMin, filterAgeMax,
-    filterGenderPerpetrator, filterPunishment,
-    filterPunishmentYearsMin, filterPunishmentYearsMax,
+    activeFilters, activeRanges,
     markerPopupOpen, closeMarkerPopup, activeMarkerId,
     toggleFilterPanel,
   } = useUiStore();
@@ -70,21 +68,42 @@ export function MapEditorPage() {
       const to = new Date(filterTo); to.setHours(23, 59, 59, 999);
       result = result.filter((m) => m.date && new Date(m.date) <= to);
     }
-    if (filterGenderVictim.length > 0)
-      result = result.filter((m) => m.genderVictim && filterGenderVictim.includes(m.genderVictim));
-    if (filterAgeMin > 0 || filterAgeMax < 100)
-      result = result.filter((m) => m.ageVictim != null && m.ageVictim >= filterAgeMin && m.ageVictim <= filterAgeMax);
-    if (filterGenderPerpetrator.length > 0)
-      result = result.filter((m) => m.genderPerpetrator && filterGenderPerpetrator.includes(m.genderPerpetrator));
-    if (filterPunishment.length > 0)
-      result = result.filter((m) => m.punishment && filterPunishment.includes(m.punishment));
-    if (filterPunishmentYearsMin > 0 || filterPunishmentYearsMax < 100)
-      result = result.filter((m) => m.punishmentYears != null && m.punishmentYears >= filterPunishmentYearsMin && m.punishmentYears <= filterPunishmentYearsMax);
+
+    // Dynamic chip filters
+    for (const [key, vals] of Object.entries(activeFilters)) {
+      if (!vals.length) continue;
+      if (key.startsWith('cf:')) {
+        const cfKey = key.slice(3);
+        result = result.filter((m) => {
+          const v = m.customFields?.[cfKey];
+          return v != null && vals.includes(String(v));
+        });
+      } else {
+        result = result.filter((m) => {
+          const v = (m as any)[key];
+          return v != null && vals.includes(String(v));
+        });
+      }
+    }
+
+    // Dynamic range filters
+    for (const [key, [min, max]] of Object.entries(activeRanges)) {
+      if (key.startsWith('cf:')) {
+        const cfKey = key.slice(3);
+        result = result.filter((m) => {
+          const v = m.customFields?.[cfKey];
+          return typeof v === 'number' && v >= min && v <= max;
+        });
+      } else {
+        result = result.filter((m) => {
+          const v = (m as any)[key];
+          return typeof v === 'number' && v >= min && v <= max;
+        });
+      }
+    }
+
     return result;
-  }, [markers, filterCategoryIds, filterFrom, filterTo,
-      filterGenderVictim, filterAgeMin, filterAgeMax,
-      filterGenderPerpetrator, filterPunishment,
-      filterPunishmentYearsMin, filterPunishmentYearsMax]);
+  }, [markers, filterCategoryIds, filterFrom, filterTo, activeFilters, activeRanges]);
 
   if (loading) return <FullPageSpinner message="Laddar karta…" />;
   if (error || !currentMap) {

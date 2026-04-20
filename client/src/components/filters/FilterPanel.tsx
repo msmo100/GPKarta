@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import type { Category, Marker } from '@gpkarta/shared';
 import { useUiStore } from '../../store/uiStore';
 
@@ -9,28 +9,78 @@ interface FilterPanelProps {
   filteredCount: number;
 }
 
-// ── Reusable sub-components ───────────────────────────────────────────────────
+// ── Persistence helpers ───────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p style={{
-      fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-      letterSpacing: '0.07em', color: '#9ca3af', marginBottom: 8,
-    }}>
-      {children}
-    </p>
-  );
+const LS_KEY = 'gpkarta:hidden-filters';
+
+function loadHidden(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(LS_KEY) ?? '[]')); } catch { return new Set(); }
 }
 
-function ChipGroup({
-  options, active, onToggle, onOnly,
-}: {
-  options: string[];
-  active: string[];
-  onToggle: (v: string) => void;
-  onOnly: (v: string) => void;
+function saveHidden(keys: Set<string>) {
+  localStorage.setItem(LS_KEY, JSON.stringify([...keys]));
+}
+
+// ── Field descriptor ──────────────────────────────────────────────────────────
+
+type FieldDescriptor =
+  | { kind: 'chips'; key: string; label: string; options: string[] }
+  | { kind: 'range'; key: string; label: string; min: number; max: number };
+
+const NAMED_FIELDS: Array<{ key: string; label: string }> = [
+  { key: 'region', label: 'Region' },
+  { key: 'genderVictim', label: 'Gender (victim)' },
+  { key: 'ageVictim', label: 'Age (victim)' },
+  { key: 'genderPerpetrator', label: 'Gender (perpetrator)' },
+  { key: 'punishment', label: 'Punishment type' },
+  { key: 'punishmentYears', label: 'Punishment (years)' },
+];
+
+function prettyLabel(key: string) {
+  return key.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function buildFieldDescriptors(markers: Marker[]): FieldDescriptor[] {
+  const descriptors: FieldDescriptor[] = [];
+
+  for (const { key, label } of NAMED_FIELDS) {
+    const values = markers.map((m) => (m as any)[key]).filter((v) => v != null);
+    if (!values.length) continue;
+    if (values.every((v) => typeof v === 'number')) {
+      const nums = values as number[];
+      descriptors.push({ kind: 'range', key, label, min: Math.floor(Math.min(...nums)), max: Math.ceil(Math.max(...nums)) });
+    } else {
+      const opts = [...new Set(values.map(String))].sort();
+      if (opts.length) descriptors.push({ kind: 'chips', key, label, options: opts });
+    }
+  }
+
+  const customKeys = new Set<string>();
+  for (const m of markers) {
+    if (m.customFields) Object.keys(m.customFields).forEach((k) => customKeys.add(k));
+  }
+
+  for (const key of [...customKeys].sort()) {
+    const values = markers.map((m) => m.customFields?.[key]).filter((v) => v != null);
+    if (!values.length) continue;
+    if (values.every((v) => typeof v === 'number')) {
+      const nums = values as number[];
+      descriptors.push({ kind: 'range', key: `cf:${key}`, label: prettyLabel(key), min: Math.floor(Math.min(...nums)), max: Math.ceil(Math.max(...nums)) });
+    } else {
+      const opts = [...new Set(values.map(String))].sort();
+      if (opts.length) descriptors.push({ kind: 'chips', key: `cf:${key}`, label: prettyLabel(key), options: opts });
+    }
+  }
+
+  return descriptors;
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function ChipGroup({ options, active, onToggle, onOnly }: {
+  options: string[]; active: string[];
+  onToggle: (v: string) => void; onOnly: (v: string) => void;
 }) {
-  if (!options.length) return <p style={{ fontSize: 12, color: '#d1d5db' }}>Inga data</p>;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {options.map((val) => {
@@ -54,9 +104,9 @@ function ChipGroup({
             <button
               onClick={() => onOnly(val)}
               style={{ padding: '4px 8px', fontSize: 10, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}
-              title="Visa bara detta"
+              title="Show only this"
             >
-              bara
+              only
             </button>
           </div>
         );
@@ -65,40 +115,32 @@ function ChipGroup({
   );
 }
 
-function RangeSlider({
-  label, min, max, valueMin, valueMax, onChange,
-}: {
-  label: string; min: number; max: number;
-  valueMin: number; valueMax: number;
+function RangeSlider({ min, max, valueMin, valueMax, onChange }: {
+  min: number; max: number; valueMin: number; valueMax: number;
   onChange: (min: number, max: number) => void;
 }) {
   const isDefault = valueMin === min && valueMax === max;
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <SectionLabel>{label}</SectionLabel>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
         <span style={{ fontSize: 11, color: isDefault ? '#d1d5db' : '#2563eb', fontWeight: 500 }}>
-          {isDefault ? 'Alla' : `${valueMin}–${valueMax}`}
+          {isDefault ? 'All' : `${valueMin}–${valueMax}`}
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, color: '#9ca3af', width: 20 }}>Min</span>
-          <input
-            type="range" min={min} max={max} value={valueMin}
+          <input type="range" min={min} max={max} value={valueMin}
             onChange={(e) => onChange(Math.min(+e.target.value, valueMax), valueMax)}
-            style={{ flex: 1, accentColor: '#2563eb' }}
-          />
-          <span style={{ fontSize: 11, color: '#374151', width: 24, textAlign: 'right' }}>{valueMin}</span>
+            style={{ flex: 1, accentColor: '#2563eb' }} />
+          <span style={{ fontSize: 11, color: '#374151', width: 28, textAlign: 'right' }}>{valueMin}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 10, color: '#9ca3af', width: 20 }}>Max</span>
-          <input
-            type="range" min={min} max={max} value={valueMax}
+          <input type="range" min={min} max={max} value={valueMax}
             onChange={(e) => onChange(valueMin, Math.max(+e.target.value, valueMin))}
-            style={{ flex: 1, accentColor: '#2563eb' }}
-          />
-          <span style={{ fontSize: 11, color: '#374151', width: 24, textAlign: 'right' }}>{valueMax}</span>
+            style={{ flex: 1, accentColor: '#2563eb' }} />
+          <span style={{ fontSize: 11, color: '#374151', width: 28, textAlign: 'right' }}>{valueMax}</span>
         </div>
       </div>
     </div>
@@ -111,46 +153,53 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount }: 
   const {
     filterPanelOpen, toggleFilterPanel,
     filterCategoryIds, filterFrom, filterTo,
-    filterGenderVictim, filterAgeMin, filterAgeMax,
-    filterGenderPerpetrator, filterPunishment,
-    filterPunishmentYearsMin, filterPunishmentYearsMax,
+    activeFilters, activeRanges,
     setFilterCategories, setFilterFrom, setFilterTo,
-    setFilterGenderVictim, setFilterAge,
-    setFilterGenderPerpetrator, setFilterPunishment, setFilterPunishmentYears,
+    setActiveFilter, setActiveRange,
     clearFilters,
   } = useUiStore();
 
-  // Derive unique option lists from the actual marker data
-  const genderVictimOptions = useMemo(() =>
-    [...new Set(markers.map((m) => m.genderVictim).filter(Boolean) as string[])].sort(), [markers]);
-  const genderPerpOptions = useMemo(() =>
-    [...new Set(markers.map((m) => m.genderPerpetrator).filter(Boolean) as string[])].sort(), [markers]);
-  const punishmentOptions = useMemo(() =>
-    [...new Set(markers.map((m) => m.punishment).filter(Boolean) as string[])].sort(), [markers]);
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(loadHidden);
+  const [showingHidden, setShowingHidden] = useState(false);
+
+  const hideField = useCallback((key: string) => {
+    setHiddenKeys((prev) => {
+      const next = new Set(prev).add(key);
+      saveHidden(next);
+      return next;
+    });
+    // Clear any active filter on this field when hiding
+    setActiveFilter(key, []);
+  }, [setActiveFilter]);
+
+  const restoreAll = useCallback(() => {
+    setHiddenKeys(new Set());
+    saveHidden(new Set());
+    setShowingHidden(false);
+  }, []);
+
+  const fieldDescriptors = useMemo(() => buildFieldDescriptors(markers), [markers]);
+  const visibleFields = fieldDescriptors.filter((fd) => !hiddenKeys.has(fd.key));
+  const hiddenFields = fieldDescriptors.filter((fd) => hiddenKeys.has(fd.key));
 
   const hasFilters = filterCategoryIds.length > 0 || filterFrom || filterTo ||
-    filterGenderVictim.length > 0 || filterGenderPerpetrator.length > 0 ||
-    filterPunishment.length > 0 ||
-    filterAgeMin > 0 || filterAgeMax < 100 ||
-    filterPunishmentYearsMin > 0 || filterPunishmentYearsMax < 100;
+    Object.values(activeFilters).some((v) => v.length > 0) ||
+    Object.keys(activeRanges).length > 0;
 
   const activeCount = [
     filterCategoryIds.length > 0,
     filterFrom || filterTo,
-    filterGenderVictim.length > 0,
-    filterGenderPerpetrator.length > 0,
-    filterPunishment.length > 0,
-    filterAgeMin > 0 || filterAgeMax < 100,
-    filterPunishmentYearsMin > 0 || filterPunishmentYearsMax < 100,
+    ...Object.values(activeFilters).map((v) => v.length > 0),
+    ...Object.keys(activeRanges).map(() => true),
   ].filter(Boolean).length;
 
-  function toggleChip(current: string[], val: string, set: (v: string[]) => void) {
-    set(current.includes(val) ? current.filter((v) => v !== val) : [...current, val]);
+  function toggleChip(key: string, val: string) {
+    const cur = activeFilters[key] ?? [];
+    setActiveFilter(key, cur.includes(val) ? cur.filter((v) => v !== val) : [...cur, val]);
   }
 
   return (
-    <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 400, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
-      {/* Toggle button */}
+    <div style={{ position: 'absolute', top: 10, left: 50, zIndex: 400, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
       <button
         onClick={toggleFilterPanel}
         style={{
@@ -167,135 +216,128 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount }: 
         }}
       >
         <span style={{ fontSize: 12 }}>▼</span>
-        Filtrera
+        Filter
         {activeCount > 0 && (
           <span style={{
             background: filterPanelOpen ? 'rgba(255,255,255,0.3)' : '#2563eb',
-            color: '#fff', borderRadius: 99, padding: '1px 6px',
-            fontSize: 11, fontWeight: 700,
+            color: '#fff', borderRadius: 99, padding: '1px 6px', fontSize: 11, fontWeight: 700,
           }}>
             {activeCount}
           </span>
         )}
       </button>
 
-      {/* Panel */}
       {filterPanelOpen && (
         <div style={{
-          pointerEvents: 'all',
-          background: '#fff',
+          pointerEvents: 'all', background: '#fff',
           border: '1px solid #e5e7eb', borderTop: 'none',
           borderRadius: '0 8px 8px 8px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-          width: 256,
-          maxHeight: 'calc(100vh - 160px)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
+          width: 256, maxHeight: 'calc(100vh - 160px)',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           {/* Header */}
           <div style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <span style={{ fontSize: 12, color: '#6b7280' }}>
-              {hasFilters ? `${filteredCount} / ${totalCount} markörer` : `${totalCount} markörer`}
+              {hasFilters ? `${filteredCount} / ${totalCount} markers` : `${totalCount} markers`}
             </span>
             {hasFilters && (
               <button onClick={clearFilters} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-                Rensa alla
+                Clear all
               </button>
             )}
           </div>
 
           <div style={{ overflowY: 'auto', flex: 1 }}>
 
-            {/* Category / Typ */}
+            {/* Category */}
             {categories.length > 0 && (
-              <Section title="Typ">
+              <Section title="Category">
                 <ChipGroup
                   options={categories.map((c) => c.name)}
                   active={categories.filter((c) => filterCategoryIds.includes(c.id)).map((c) => c.name)}
                   onToggle={(name) => {
                     const cat = categories.find((c) => c.name === name)!;
-                    toggleChip(filterCategoryIds, cat.id, setFilterCategories);
+                    const cur = filterCategoryIds;
+                    setFilterCategories(cur.includes(cat.id) ? cur.filter((id) => id !== cat.id) : [...cur, cat.id]);
                   }}
-                  onOnly={(name) => {
-                    const cat = categories.find((c) => c.name === name)!;
-                    setFilterCategories([cat.id]);
-                  }}
+                  onOnly={(name) => setFilterCategories([categories.find((c) => c.name === name)!.id])}
                 />
               </Section>
             )}
 
             {/* Date */}
-            <Section title="Datum">
+            <Section title="Date">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>Från</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>From</span>
                   <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 12 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>Till</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>To</span>
                   <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 12 }} />
                 </div>
               </div>
             </Section>
 
-            {/* Offrets kön */}
-            {genderVictimOptions.length > 0 && (
-              <Section title="Offrets kön">
-                <ChipGroup
-                  options={genderVictimOptions}
-                  active={filterGenderVictim}
-                  onToggle={(v) => toggleChip(filterGenderVictim, v, setFilterGenderVictim)}
-                  onOnly={(v) => setFilterGenderVictim([v])}
-                />
+            {/* Dynamic field filters */}
+            {visibleFields.map((fd) => (
+              <Section key={fd.key} title={fd.label} onHide={() => hideField(fd.key)}>
+                {fd.kind === 'chips' ? (
+                  <ChipGroup
+                    options={fd.options}
+                    active={activeFilters[fd.key] ?? []}
+                    onToggle={(v) => toggleChip(fd.key, v)}
+                    onOnly={(v) => setActiveFilter(fd.key, [v])}
+                  />
+                ) : (
+                  <RangeSlider
+                    min={fd.min} max={fd.max}
+                    valueMin={activeRanges[fd.key]?.[0] ?? fd.min}
+                    valueMax={activeRanges[fd.key]?.[1] ?? fd.max}
+                    onChange={(min, max) => setActiveRange(fd.key, [min, max])}
+                  />
+                )}
               </Section>
-            )}
+            ))}
 
-            {/* Offrets ålder */}
-            {markers.some((m) => m.ageVictim != null) && (
-              <Section title="Offrets ålder">
-                <RangeSlider
-                  label="" min={0} max={100}
-                  valueMin={filterAgeMin} valueMax={filterAgeMax}
-                  onChange={setFilterAge}
-                />
-              </Section>
-            )}
-
-            {/* Gärningsmans kön */}
-            {genderPerpOptions.length > 0 && (
-              <Section title="Gärningsmans kön">
-                <ChipGroup
-                  options={genderPerpOptions}
-                  active={filterGenderPerpetrator}
-                  onToggle={(v) => toggleChip(filterGenderPerpetrator, v, setFilterGenderPerpetrator)}
-                  onOnly={(v) => setFilterGenderPerpetrator([v])}
-                />
-              </Section>
-            )}
-
-            {/* Straff typ */}
-            {punishmentOptions.length > 0 && (
-              <Section title="Straff typ">
-                <ChipGroup
-                  options={punishmentOptions}
-                  active={filterPunishment}
-                  onToggle={(v) => toggleChip(filterPunishment, v, setFilterPunishment)}
-                  onOnly={(v) => setFilterPunishment([v])}
-                />
-              </Section>
-            )}
-
-            {/* Straff längd */}
-            {markers.some((m) => m.punishmentYears != null) && (
-              <Section title="Straff längd (år)">
-                <RangeSlider
-                  label="" min={0} max={100}
-                  valueMin={filterPunishmentYearsMin} valueMax={filterPunishmentYearsMax}
-                  onChange={setFilterPunishmentYears}
-                />
-              </Section>
+            {/* Hidden fields footer */}
+            {hiddenFields.length > 0 && (
+              <div style={{ padding: '8px 14px', borderTop: '1px solid #f3f4f6' }}>
+                <button
+                  onClick={() => setShowingHidden((v) => !v)}
+                  style={{ fontSize: 11, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+                >
+                  {showingHidden ? '▲' : '▶'} {hiddenFields.length} hidden filter{hiddenFields.length > 1 ? 's' : ''}
+                </button>
+                {showingHidden && (
+                  <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {hiddenFields.map((fd) => (
+                      <div key={fd.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#6b7280' }}>
+                        <span>{fd.label}</span>
+                        <button
+                          onClick={() => {
+                            setHiddenKeys((prev) => {
+                              const next = new Set(prev);
+                              next.delete(fd.key);
+                              saveHidden(next);
+                              return next;
+                            });
+                          }}
+                          style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                          restore
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={restoreAll} style={{ marginTop: 2, fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                      Restore all
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
           </div>
@@ -305,10 +347,23 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount }: 
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, onHide }: { title: string; children: React.ReactNode; onHide?: () => void }) {
   return (
     <div style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6' }}>
-      <SectionLabel>{title}</SectionLabel>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af', margin: 0 }}>
+          {title}
+        </p>
+        {onHide && (
+          <button
+            onClick={onHide}
+            title="Hide this filter"
+            style={{ fontSize: 13, lineHeight: 1, color: '#d1d5db', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}
+          >
+            ×
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );

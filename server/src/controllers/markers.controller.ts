@@ -30,6 +30,7 @@ const markerSchema = z.object({
   punishment: z.string().max(200).optional().nullable(),
   punishmentYears: z.number().min(0).max(200).optional().nullable(),
   region: z.string().max(200).optional().nullable(),
+  customFields: z.record(z.union([z.string(), z.number(), z.null()])).optional().nullable(),
 });
 
 async function assertMapExists(mapId: string) {
@@ -43,6 +44,15 @@ const markerInclude = {
   category: { select: { id: true, name: true, color: true, icon: true } },
 };
 
+function parseCustomFields(raw: string | null | undefined): Record<string, string | number | null> | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function serializeMarker(m: any) {
+  return { ...m, customFields: parseCustomFields(m.customFields) };
+}
+
 export async function listMarkers(req: Request, res: Response, next: NextFunction) {
   try {
     await assertMapExists(req.params.mapId);
@@ -55,7 +65,7 @@ export async function listMarkers(req: Request, res: Response, next: NextFunctio
       if (to) where.date.lte = new Date(to);
     }
     const markers = await db.marker.findMany({ where, include: markerInclude, orderBy: { createdAt: 'desc' } });
-    res.json({ data: markers });
+    res.json({ data: markers.map(serializeMarker) });
   } catch (err) {
     next(err);
   }
@@ -69,10 +79,19 @@ export async function getMarker(req: Request, res: Response, next: NextFunction)
       include: markerInclude,
     });
     if (!marker) throw AppError.notFound('Marker not found');
-    res.json({ data: marker });
+    res.json({ data: serializeMarker(marker) });
   } catch (err) {
     next(err);
   }
+}
+
+function prepareMarkerData(data: z.infer<typeof markerSchema> & { date?: string | null }) {
+  const { customFields, date, ...rest } = data;
+  return {
+    ...rest,
+    date: date ? new Date(date) : null,
+    customFields: customFields ? JSON.stringify(customFields) : null,
+  };
 }
 
 export async function createMarker(req: Request, res: Response, next: NextFunction) {
@@ -80,10 +99,10 @@ export async function createMarker(req: Request, res: Response, next: NextFuncti
     await assertMapExists(req.params.mapId);
     const data = markerSchema.parse(req.body);
     const marker = await db.marker.create({
-      data: { ...data, date: data.date ? new Date(data.date) : null, mapId: req.params.mapId },
+      data: { ...prepareMarkerData(data), mapId: req.params.mapId },
       include: markerInclude,
     });
-    res.status(201).json({ data: marker });
+    res.status(201).json({ data: serializeMarker(marker) });
   } catch (err) {
     next(err);
   }
@@ -95,12 +114,17 @@ export async function updateMarker(req: Request, res: Response, next: NextFuncti
     const existing = await db.marker.findFirst({ where: { id: req.params.markerId, mapId: req.params.mapId } });
     if (!existing) throw AppError.notFound('Marker not found');
     const data = markerSchema.partial().parse(req.body);
+    const { customFields, date, ...rest } = data;
     const marker = await db.marker.update({
       where: { id: req.params.markerId },
-      data: { ...data, date: data.date !== undefined ? (data.date ? new Date(data.date) : null) : undefined },
+      data: {
+        ...rest,
+        date: date !== undefined ? (date ? new Date(date) : null) : undefined,
+        ...(customFields !== undefined ? { customFields: customFields ? JSON.stringify(customFields) : null } : {}),
+      },
       include: markerInclude,
     });
-    res.json({ data: marker });
+    res.json({ data: serializeMarker(marker) });
   } catch (err) {
     next(err);
   }
@@ -126,12 +150,12 @@ export async function bulkCreateMarkers(req: Request, res: Response, next: NextF
     const created = await db.$transaction(
       markers.map((m) =>
         db.marker.create({
-          data: { ...m, date: m.date ? new Date(m.date) : null, mapId: req.params.mapId },
+          data: { ...prepareMarkerData(m), mapId: req.params.mapId },
           include: markerInclude,
         }),
       ),
     );
-    res.status(201).json({ data: created });
+    res.status(201).json({ data: created.map(serializeMarker) });
   } catch (err) {
     next(err);
   }

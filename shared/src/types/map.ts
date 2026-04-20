@@ -3,7 +3,11 @@ export type TileLayerKey =
   | 'carto-light'
   | 'carto-light-nolabels'
   | 'carto-dark'
-  | 'carto-dark-nolabels';
+  | 'carto-dark-nolabels'
+  | 'carto-voyager'
+  | 'esri-satellite'
+  | 'esri-topo'
+  | 'opentopomap';
 
 export interface MapRecord {
   id: string;
@@ -16,6 +20,8 @@ export interface MapRecord {
   defaultZoom: number;
   tileLayer: TileLayerKey;
   clusterMarkers: boolean;
+  clusterColor: string | null;
+  clusterBorderColor: string | null;
   showMinimap: boolean;
   showScaleBar: boolean;
   popupBg: string | null;
@@ -33,6 +39,8 @@ export interface CreateMapInput {
   defaultZoom?: number;
   tileLayer?: TileLayerKey;
   clusterMarkers?: boolean;
+  clusterColor?: string | null;
+  clusterBorderColor?: string | null;
   showMinimap?: boolean;
   showScaleBar?: boolean;
   popupBg?: string | null;
@@ -48,6 +56,8 @@ export interface UpdateMapInput {
   defaultZoom?: number;
   tileLayer?: TileLayerKey;
   clusterMarkers?: boolean;
+  clusterColor?: string | null;
+  clusterBorderColor?: string | null;
   showMinimap?: boolean;
   showScaleBar?: boolean;
   popupBg?: string | null;

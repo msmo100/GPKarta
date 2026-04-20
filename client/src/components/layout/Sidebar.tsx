@@ -84,7 +84,18 @@ export function Sidebar({ map, markers, filteredMarkers, categories, shapes }: S
         <div style={{ display: 'flex', gap: 4 }}>
           <Button variant="ghost" size="sm" onClick={() => setCsvOpen(true)} title="Importera CSV">↑ CSV</Button>
           <Button variant="ghost" size="sm" onClick={() => setGeoOpen(true)} title="Importera/Exportera GeoJSON, GPX, KML">↑ Geo</Button>
-          <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)} title="Kartinställningar">⚙</Button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Kartinställningar"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 30, height: 30, borderRadius: 6, border: '1px solid #e5e7eb',
+              background: '#f9fafb', cursor: 'pointer', fontSize: 16, color: '#374151',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#2563eb'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f9fafb'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
+          >⚙</button>
           <Button variant="ghost" size="sm" onClick={() => setEmbedOpen(true)} title="Bädda in">{'</>'}</Button>
         </div>
       </div>

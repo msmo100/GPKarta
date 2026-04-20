@@ -22,16 +22,16 @@ interface UiState {
   pendingShape: PendingShape | null;
   modal: ModalType;
   modalData: any;
+
+  // Fixed filters
   filterCategoryIds: string[];
   filterFrom: string;
   filterTo: string;
-  filterGenderVictim: string[];
-  filterAgeMin: number;
-  filterAgeMax: number;
-  filterGenderPerpetrator: string[];
-  filterPunishment: string[];
-  filterPunishmentYearsMin: number;
-  filterPunishmentYearsMax: number;
+
+  // Dynamic filters: key → active string values (for chip/checkbox filters)
+  activeFilters: Record<string, string[]>;
+  // Dynamic range filters: key → [min, max]
+  activeRanges: Record<string, [number, number]>;
 
   markerPopupOpen: boolean;
   openMarkerPopup: () => void;
@@ -53,11 +53,8 @@ interface UiState {
   setFilterCategories: (ids: string[]) => void;
   setFilterFrom: (from: string) => void;
   setFilterTo: (to: string) => void;
-  setFilterGenderVictim: (vals: string[]) => void;
-  setFilterAge: (min: number, max: number) => void;
-  setFilterGenderPerpetrator: (vals: string[]) => void;
-  setFilterPunishment: (vals: string[]) => void;
-  setFilterPunishmentYears: (min: number, max: number) => void;
+  setActiveFilter: (key: string, vals: string[]) => void;
+  setActiveRange: (key: string, range: [number, number]) => void;
   clearFilters: () => void;
 }
 
@@ -75,13 +72,8 @@ export const useUiStore = create<UiState>((set) => ({
   filterCategoryIds: [],
   filterFrom: '',
   filterTo: '',
-  filterGenderVictim: [],
-  filterAgeMin: 0,
-  filterAgeMax: 100,
-  filterGenderPerpetrator: [],
-  filterPunishment: [],
-  filterPunishmentYearsMin: 0,
-  filterPunishmentYearsMax: 100,
+  activeFilters: {},
+  activeRanges: {},
 
   filterPanelOpen: false,
   toggleFilterPanel: () => set((s) => ({ filterPanelOpen: !s.filterPanelOpen })),
@@ -102,15 +94,7 @@ export const useUiStore = create<UiState>((set) => ({
   setFilterCategories: (ids) => set({ filterCategoryIds: ids }),
   setFilterFrom: (from) => set({ filterFrom: from }),
   setFilterTo: (to) => set({ filterTo: to }),
-  setFilterGenderVictim: (vals) => set({ filterGenderVictim: vals }),
-  setFilterAge: (min, max) => set({ filterAgeMin: min, filterAgeMax: max }),
-  setFilterGenderPerpetrator: (vals) => set({ filterGenderPerpetrator: vals }),
-  setFilterPunishment: (vals) => set({ filterPunishment: vals }),
-  setFilterPunishmentYears: (min, max) => set({ filterPunishmentYearsMin: min, filterPunishmentYearsMax: max }),
-  clearFilters: () => set({
-    filterCategoryIds: [], filterFrom: '', filterTo: '',
-    filterGenderVictim: [], filterAgeMin: 0, filterAgeMax: 100,
-    filterGenderPerpetrator: [], filterPunishment: [],
-    filterPunishmentYearsMin: 0, filterPunishmentYearsMax: 100,
-  }),
+  setActiveFilter: (key, vals) => set((s) => ({ activeFilters: { ...s.activeFilters, [key]: vals } })),
+  setActiveRange: (key, range) => set((s) => ({ activeRanges: { ...s.activeRanges, [key]: range } })),
+  clearFilters: () => set({ filterCategoryIds: [], filterFrom: '', filterTo: '', activeFilters: {}, activeRanges: {} }),
 }));
