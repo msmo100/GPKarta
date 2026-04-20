@@ -13,7 +13,17 @@ export function createApp() {
   // Scurity headers
   app.use(
     helmet({
-      crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow serving images cross-origin
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'blob:', '*.tile.openstreetmap.org', '*.basemaps.cartocdn.com', '*.tile.opentopomap.org', 'server.arcgisonline.com', '*.google.com', '*.googleapis.com', '*.gstatic.com'],
+          connectSrc: ["'self'", '*.tile.openstreetmap.org', '*.basemaps.cartocdn.com'],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          workerSrc: ["'self'", 'blob:'],
+        },
+      },
     }),
   );
 
