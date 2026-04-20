@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import type { Marker } from '@gpkarta/shared';
 import type { EmbedData } from '../../api/embed';
 import { MarkerLayer } from './MarkerLayer';
+import { FilterPanel } from '../filters/FilterPanel';
 import type { EmbedConfig } from '@gpkarta/shared';
 import L from 'leaflet';
 
@@ -28,6 +29,14 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
 
   return (
     <div className="embed-map" style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {!config.hideControls && (
+        <FilterPanel
+          categories={data.categories}
+          markers={data.markers}
+          totalCount={data.markers.length}
+          filteredCount={filteredMarkers.length}
+        />
+      )}
       <MapContainer
         center={[centerLat, centerLng]}
         zoom={zoom}

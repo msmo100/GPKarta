@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { embedApi, type EmbedData } from '../api/embed';
 import { EmbedMapView } from '../components/map/EmbedMapView';
 import type { EmbedConfig } from '@gpkarta/shared';
+import { useUiStore } from '../store/uiStore';
 import '../styles/embed.css';
 
 function parseEmbedConfig(): EmbedConfig {
@@ -23,6 +24,7 @@ export function EmbedPage() {
   const [error, setError] = useState('');
 
   const config = useMemo(() => parseEmbedConfig(), []);
+  const { filterCategoryIds, filterFrom, filterTo, activeFilters, activeRanges } = useUiStore();
 
   useEffect(() => {
     if (!embedToken) return;
@@ -34,10 +36,42 @@ export function EmbedPage() {
 
   const filteredMarkers = useMemo(() => {
     if (!data) return [];
-    if (!config.category) return data.markers;
-    const allowed = config.category.split(',');
-    return data.markers.filter((m) => m.categoryId && allowed.includes(m.categoryId));
-  }, [data, config.category]);
+    let result = data.markers;
+
+    // URL-param category filter
+    if (config.category) {
+      const allowed = config.category.split(',');
+      result = result.filter((m) => m.categoryId && allowed.includes(m.categoryId));
+    }
+
+    // Panel category filter
+    if (filterCategoryIds.length > 0)
+      result = result.filter((m) => m.categoryId ? filterCategoryIds.includes(m.categoryId) : false);
+    if (filterFrom)
+      result = result.filter((m) => m.date && new Date(m.date) >= new Date(filterFrom));
+    if (filterTo) {
+      const to = new Date(filterTo); to.setHours(23, 59, 59, 999);
+      result = result.filter((m) => m.date && new Date(m.date) <= to);
+    }
+    for (const [key, vals] of Object.entries(activeFilters)) {
+      if (!vals.length) continue;
+      if (key.startsWith('cf:')) {
+        const cfKey = key.slice(3);
+        result = result.filter((m) => { const v = m.customFields?.[cfKey]; return v != null && vals.includes(String(v)); });
+      } else {
+        result = result.filter((m) => { const v = (m as any)[key]; return v != null && vals.includes(String(v)); });
+      }
+    }
+    for (const [key, [min, max]] of Object.entries(activeRanges)) {
+      if (key.startsWith('cf:')) {
+        const cfKey = key.slice(3);
+        result = result.filter((m) => { const v = m.customFields?.[cfKey]; return typeof v === 'number' && v >= min && v <= max; });
+      } else {
+        result = result.filter((m) => { const v = (m as any)[key]; return typeof v === 'number' && v >= min && v <= max; });
+      }
+    }
+    return result;
+  }, [data, config.category, filterCategoryIds, filterFrom, filterTo, activeFilters, activeRanges]);
 
   if (error) {
     return (
