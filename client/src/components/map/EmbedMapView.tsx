@@ -5,6 +5,7 @@ import type { Marker } from '@gpkarta/shared';
 import type { EmbedData } from '../../api/embed';
 import { MarkerLayer } from './MarkerLayer';
 import { FilterPanel } from '../filters/FilterPanel';
+import { getTileLayer } from '../../config/tileLayers';
 import type { EmbedConfig } from '@gpkarta/shared';
 import L from 'leaflet';
 
@@ -26,6 +27,7 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
   const centerLat = config.lat ?? data.centerLat;
   const centerLng = config.lng ?? data.centerLng;
   const zoom = config.zoom ?? data.defaultZoom;
+  const tileLayer = getTileLayer((data as any).tileLayer ?? 'osm');
 
   return (
     <div className="embed-map" style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -44,10 +46,7 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
         zoomControl={!config.hideControls}
         attributionControl={!config.hideAttribution}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer attribution={tileLayer.attribution} url={tileLayer.url} />
         <MarkerLayer markers={filteredMarkers} readOnly />
       </MapContainer>
     </div>

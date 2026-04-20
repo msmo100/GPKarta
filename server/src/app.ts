@@ -67,6 +67,9 @@ export function createApp() {
   if (config.nodeEnv === 'production') {
     const clientDist = path.resolve(__dirname, '../../client/dist');
     app.use(express.static(clientDist));
+    app.get('/embed/*', (_req, res) => {
+      res.sendFile(path.join(clientDist, 'embed.html'));
+    });
     app.get(/^(?!\/api|\/uploads).*/, (_req, res) => {
       res.sendFile(path.join(clientDist, 'index.html'));
     });
