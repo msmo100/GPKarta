@@ -51,6 +51,15 @@ export function createApp() {
   // API routes
   app.use('/api', routes);
 
+  // Serve frontend in production
+  if (config.nodeEnv === 'production') {
+    const clientDist = path.resolve(__dirname, '../../client/dist');
+    app.use(express.static(clientDist));
+    app.get(/^(?!\/api|\/uploads).*/, (_req, res) => {
+      res.sendFile(path.join(clientDist, 'index.html'));
+    });
+  }
+
   // Error handler must be last
   app.use(errorHandler);
 
