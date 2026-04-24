@@ -22,6 +22,7 @@ const createMapSchema = z.object({
   popupBg: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
   popupTextColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
   filterDarkMode: z.boolean().optional(),
+  hiddenFilterKeys: z.array(z.string()).optional().nullable(),
 });
 
 const updateMapSchema = createMapSchema.partial();
@@ -65,9 +66,11 @@ export async function updateMap(req: Request, res: Response, next: NextFunction)
   try {
     const existing = await db.map.findUnique({ where: { id: req.params.mapId } });
     if (!existing) throw AppError.notFound('Map not found');
-    const data = updateMapSchema.parse(req.body);
-    const map = await db.map.update({ where: { id: req.params.mapId }, data });
-    res.json({ data: map });
+    const { hiddenFilterKeys, ...rest } = updateMapSchema.parse(req.body);
+    const dbData: any = { ...rest };
+    if (hiddenFilterKeys !== undefined) dbData.hiddenFilterKeys = hiddenFilterKeys !== null ? JSON.stringify(hiddenFilterKeys) : null;
+    const map = await db.map.update({ where: { id: req.params.mapId }, data: dbData }) as any;
+    res.json({ data: { ...map, hiddenFilterKeys: map.hiddenFilterKeys ? JSON.parse(map.hiddenFilterKeys) : null } });
   } catch (err) {
     next(err);
   }

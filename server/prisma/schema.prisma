@@ -25,7 +25,8 @@ model Map {
   showScaleBar   Boolean @default(true)
 
   // Filter panel style
-  filterDarkMode Boolean @default(false)
+  filterDarkMode    Boolean @default(false)
+  hiddenFilterKeys  String? // JSON array of hidden field keys
 
   // Popup style
   popupBg        String?
