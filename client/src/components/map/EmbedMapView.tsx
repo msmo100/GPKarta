@@ -72,6 +72,7 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
             totalCount={data.markers.length}
             filteredCount={filteredMarkers.length}
             hideable={false}
+            initialHiddenKeys={data.hiddenFilterKeys ?? []}
           />
         </div>
       )}

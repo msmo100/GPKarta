@@ -163,6 +163,7 @@ export function MapEditorPage() {
           totalCount={markers.length}
           filteredCount={filteredMarkers.length}
           showThemeToggle
+          onHiddenKeysChange={(keys) => mapId && mapsApi.update(mapId, { hiddenFilterKeys: keys })}
         />
         <MapView
           map={currentMap}

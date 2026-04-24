@@ -8,6 +8,8 @@ export interface EmbedData {
   centerLat: number;
   centerLng: number;
   defaultZoom: number;
+  filterDarkMode: boolean;
+  hiddenFilterKeys: string[] | null;
   categories: Category[];
   markers: Marker[];
 }

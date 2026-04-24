@@ -61,6 +61,12 @@ export const TILE_LAYERS: TileLayerDef[] = [
     attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, FAO, NOAA, USGS',
   },
   {
+    key: 'esri-ocean',
+    label: 'Marint (ESRI Ocean)',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, DeLorme, GEBCO, NOAA NGDC',
+  },
+  {
     key: 'opentopomap',
     label: 'OpenTopoMap',
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',

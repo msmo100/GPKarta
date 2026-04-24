@@ -9,6 +9,8 @@ interface FilterPanelProps {
   filteredCount: number;
   hideable?: boolean;
   showThemeToggle?: boolean;
+  initialHiddenKeys?: string[];
+  onHiddenKeysChange?: (keys: string[]) => void;
 }
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -203,7 +205,7 @@ function RangeSlider({ min, max, valueMin, valueMax, onChange, theme }: {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function FilterPanel({ categories, markers, totalCount, filteredCount, hideable = true, showThemeToggle = false }: FilterPanelProps) {
+export function FilterPanel({ categories, markers, totalCount, filteredCount, hideable = true, showThemeToggle = false, initialHiddenKeys, onHiddenKeysChange }: FilterPanelProps) {
   const {
     filterPanelOpen, toggleFilterPanel,
     filterCategoryIds, filterFrom, filterTo,
@@ -216,23 +218,31 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
 
   const theme = filterDarkMode ? DARK : LIGHT;
 
-  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(loadHidden);
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(() =>
+    initialHiddenKeys !== undefined ? new Set(initialHiddenKeys) : loadHidden()
+  );
   const [showingHidden, setShowingHidden] = useState(false);
+
+  const persistHidden = useCallback((next: Set<string>) => {
+    if (initialHiddenKeys === undefined) saveHidden(next);
+    onHiddenKeysChange?.([...next]);
+  }, [initialHiddenKeys, onHiddenKeysChange]);
 
   const hideField = useCallback((key: string) => {
     setHiddenKeys((prev) => {
       const next = new Set(prev).add(key);
-      saveHidden(next);
+      persistHidden(next);
       return next;
     });
     setActiveFilter(key, []);
-  }, [setActiveFilter]);
+  }, [setActiveFilter, persistHidden]);
 
   const restoreAll = useCallback(() => {
-    setHiddenKeys(new Set());
-    saveHidden(new Set());
+    const next = new Set<string>();
+    persistHidden(next);
+    setHiddenKeys(next);
     setShowingHidden(false);
-  }, []);
+  }, [persistHidden]);
 
   const fieldDescriptors = useMemo(() => buildFieldDescriptors(markers), [markers]);
   const visibleFields = fieldDescriptors.filter((fd) => !hiddenKeys.has(fd.key));
@@ -399,7 +409,7 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
                             setHiddenKeys((prev) => {
                               const next = new Set(prev);
                               next.delete(fd.key);
-                              saveHidden(next);
+                              persistHidden(next);
                               return next;
                             });
                           }}

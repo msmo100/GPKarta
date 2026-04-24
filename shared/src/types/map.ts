@@ -7,6 +7,7 @@ export type TileLayerKey =
   | 'carto-voyager'
   | 'esri-satellite'
   | 'esri-topo'
+  | 'esri-ocean'
   | 'opentopomap';
 
 export interface MapRecord {
@@ -27,6 +28,7 @@ export interface MapRecord {
   popupBg: string | null;
   popupTextColor: string | null;
   filterDarkMode: boolean;
+  hiddenFilterKeys: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,4 +67,5 @@ export interface UpdateMapInput {
   popupBg?: string | null;
   popupTextColor?: string | null;
   filterDarkMode?: boolean;
+  hiddenFilterKeys?: string[] | null;
 }
