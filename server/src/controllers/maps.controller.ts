@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db';
 import { AppError } from '../utils/errors';
 
-const TILE_LAYERS = ['osm', 'carto-light', 'carto-light-nolabels', 'carto-dark', 'carto-dark-nolabels', 'carto-voyager', 'esri-satellite', 'esri-topo', 'opentopomap'] as const;
+const TILE_LAYERS = ['osm', 'carto-light', 'carto-light-nolabels', 'carto-dark', 'carto-dark-nolabels', 'carto-voyager', 'esri-satellite', 'esri-topo', 'esri-ocean', 'opentopomap'] as const;
 
 const createMapSchema = z.object({
   title: z.string().min(1).max(200),
