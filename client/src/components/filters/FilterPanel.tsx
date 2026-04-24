@@ -30,11 +30,11 @@ type FieldDescriptor =
 
 const NAMED_FIELDS: Array<{ key: string; label: string }> = [
   { key: 'region', label: 'Region' },
-  { key: 'genderVictim', label: 'Gender (victim)' },
-  { key: 'ageVictim', label: 'Age (victim)' },
-  { key: 'genderPerpetrator', label: 'Gender (perpetrator)' },
-  { key: 'punishment', label: 'Punishment type' },
-  { key: 'punishmentYears', label: 'Punishment (years)' },
+  { key: 'genderVictim', label: 'Kön (offer)' },
+  { key: 'ageVictim', label: 'Ålder (offer)' },
+  { key: 'genderPerpetrator', label: 'Kön (gärningsman)' },
+  { key: 'punishment', label: 'Påföljd' },
+  { key: 'punishmentYears', label: 'Påföljd (år)' },
 ];
 
 function prettyLabel(key: string) {
@@ -105,9 +105,9 @@ function ChipGroup({ options, active, onToggle, onOnly }: {
             <button
               onClick={() => onOnly(val)}
               style={{ padding: '4px 8px', fontSize: 10, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}
-              title="Show only this"
+              title="Visa bara detta"
             >
-              only
+              bara
             </button>
           </div>
         );
@@ -125,7 +125,7 @@ function RangeSlider({ min, max, valueMin, valueMax, onChange }: {
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
         <span style={{ fontSize: 11, color: isDefault ? '#d1d5db' : '#2563eb', fontWeight: 500 }}>
-          {isDefault ? 'All' : `${valueMin}–${valueMax}`}
+          {isDefault ? 'Alla' : `${valueMin}–${valueMax}`}
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -240,11 +240,11 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
           {/* Header */}
           <div style={{ padding: '10px 14px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
             <span style={{ fontSize: 12, color: '#6b7280' }}>
-              {hasFilters ? `${filteredCount} / ${totalCount} markers` : `${totalCount} markers`}
+              {hasFilters ? `${filteredCount} / ${totalCount} markeringar` : `${totalCount} markeringar`}
             </span>
             {hasFilters && (
               <button onClick={clearFilters} style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
-                Clear all
+                Rensa alla
               </button>
             )}
           </div>
@@ -253,7 +253,7 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
 
             {/* Category */}
             {categories.length > 0 && (
-              <Section title="Category">
+              <Section title="Kategori">
                 <ChipGroup
                   options={categories.map((c) => c.name)}
                   active={categories.filter((c) => filterCategoryIds.includes(c.id)).map((c) => c.name)}
@@ -268,15 +268,15 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
             )}
 
             {/* Date */}
-            <Section title="Date">
+            <Section title="Datum">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>From</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>Från</span>
                   <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 12 }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>To</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', width: 28 }}>Till</span>
                   <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)}
                     style={{ flex: 1, padding: '4px 7px', border: '1px solid #e5e7eb', borderRadius: 5, fontSize: 12 }} />
                 </div>
@@ -311,7 +311,7 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
                   onClick={() => setShowingHidden((v) => !v)}
                   style={{ fontSize: 11, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}
                 >
-                  {showingHidden ? '▲' : '▶'} {hiddenFields.length} hidden filter{hiddenFields.length > 1 ? 's' : ''}
+                  {showingHidden ? '▲' : '▶'} {hiddenFields.length} dolt{hiddenFields.length > 1 ? 'a' : ''} filter
                 </button>
                 {showingHidden && (
                   <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -329,12 +329,12 @@ export function FilterPanel({ categories, markers, totalCount, filteredCount, hi
                           }}
                           style={{ fontSize: 11, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}
                         >
-                          restore
+                          återställ
                         </button>
                       </div>
                     ))}
                     <button onClick={restoreAll} style={{ marginTop: 2, fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                      Restore all
+                      Återställ alla
                     </button>
                   </div>
                 )}
