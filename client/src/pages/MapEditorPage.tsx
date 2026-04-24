@@ -30,6 +30,7 @@ export function MapEditorPage() {
     activeFilters, activeRanges,
     markerPopupOpen, closeMarkerPopup, activeMarkerId,
     toggleFilterPanel,
+    filterDarkMode, setFilterDarkMode,
   } = useUiStore();
 
   const [loading, setLoading] = React.useState(true);
@@ -51,12 +52,20 @@ export function MapEditorPage() {
         setMarkers(mkrs);
         setCategories(cats);
         setShapes(shps);
+        setFilterDarkMode(map.filterDarkMode ?? false);
       })
       .catch(() => setError('Det gick inte att ladda kartan'))
       .finally(() => setLoading(false));
 
     return () => reset();
   }, [mapId]);
+
+  const initialized = React.useRef(false);
+  useEffect(() => {
+    if (!initialized.current) { initialized.current = true; return; }
+    if (!mapId) return;
+    mapsApi.update(mapId, { filterDarkMode });
+  }, [filterDarkMode]);
 
   const filteredMarkers = useMemo(() => {
     let result = markers;

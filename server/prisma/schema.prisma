@@ -24,6 +24,9 @@ model Map {
   showMinimap    Boolean @default(false)
   showScaleBar   Boolean @default(true)
 
+  // Filter panel style
+  filterDarkMode Boolean @default(false)
+
   // Popup style
   popupBg        String?
   popupTextColor String?

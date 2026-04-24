@@ -42,6 +42,7 @@ interface UiState {
 
   filterDarkMode: boolean;
   toggleFilterDarkMode: () => void;
+  setFilterDarkMode: (val: boolean) => void;
 
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
@@ -83,6 +84,7 @@ export const useUiStore = create<UiState>((set) => ({
 
   filterDarkMode: false,
   toggleFilterDarkMode: () => set((s) => ({ filterDarkMode: !s.filterDarkMode })),
+  setFilterDarkMode: (val) => set({ filterDarkMode: val }),
 
   openMarkerPopup: () => set({ markerPopupOpen: true }),
   closeMarkerPopup: () => set({ markerPopupOpen: false }),

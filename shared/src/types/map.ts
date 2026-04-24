@@ -26,6 +26,7 @@ export interface MapRecord {
   showScaleBar: boolean;
   popupBg: string | null;
   popupTextColor: string | null;
+  filterDarkMode: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +46,7 @@ export interface CreateMapInput {
   showScaleBar?: boolean;
   popupBg?: string | null;
   popupTextColor?: string | null;
+  filterDarkMode?: boolean;
 }
 
 export interface UpdateMapInput {
@@ -62,4 +64,5 @@ export interface UpdateMapInput {
   showScaleBar?: boolean;
   popupBg?: string | null;
   popupTextColor?: string | null;
+  filterDarkMode?: boolean;
 }

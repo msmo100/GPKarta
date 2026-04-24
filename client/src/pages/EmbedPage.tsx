@@ -24,13 +24,13 @@ export function EmbedPage() {
   const [error, setError] = useState('');
 
   const config = useMemo(() => parseEmbedConfig(), []);
-  const { filterCategoryIds, filterFrom, filterTo, activeFilters, activeRanges } = useUiStore();
+  const { filterCategoryIds, filterFrom, filterTo, activeFilters, activeRanges, setFilterDarkMode } = useUiStore();
 
   useEffect(() => {
     if (!embedToken) return;
     embedApi
       .get(embedToken)
-      .then(setData)
+      .then((d) => { setData(d); setFilterDarkMode((d as any).filterDarkMode ?? false); })
       .catch(() => setError('Map not found or embed is disabled'));
   }, [embedToken]);
 

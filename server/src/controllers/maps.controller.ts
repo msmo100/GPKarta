@@ -21,6 +21,7 @@ const createMapSchema = z.object({
   showScaleBar: z.boolean().optional(),
   popupBg: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
   popupTextColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),
+  filterDarkMode: z.boolean().optional(),
 });
 
 const updateMapSchema = createMapSchema.partial();
