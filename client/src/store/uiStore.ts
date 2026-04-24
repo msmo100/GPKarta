@@ -40,6 +40,9 @@ interface UiState {
   filterPanelOpen: boolean;
   toggleFilterPanel: () => void;
 
+  filterDarkMode: boolean;
+  toggleFilterDarkMode: () => void;
+
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setActiveMarker: (id: string | null) => void;
@@ -77,6 +80,9 @@ export const useUiStore = create<UiState>((set) => ({
 
   filterPanelOpen: false,
   toggleFilterPanel: () => set((s) => ({ filterPanelOpen: !s.filterPanelOpen })),
+
+  filterDarkMode: false,
+  toggleFilterDarkMode: () => set((s) => ({ filterDarkMode: !s.filterDarkMode })),
 
   openMarkerPopup: () => set({ markerPopupOpen: true }),
   closeMarkerPopup: () => set({ markerPopupOpen: false }),

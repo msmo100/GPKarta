@@ -153,6 +153,7 @@ export function MapEditorPage() {
           markers={markers}
           totalCount={markers.length}
           filteredCount={filteredMarkers.length}
+          showThemeToggle
         />
         <MapView
           map={currentMap}
