@@ -54,9 +54,11 @@ export async function getMap(req: Request, res: Response, next: NextFunction) {
 
 export async function createMap(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = createMapSchema.parse(req.body);
-    const map = await db.map.create({ data });
-    res.status(201).json({ data: map });
+    const { hiddenFilterKeys, ...rest } = createMapSchema.parse(req.body);
+    const dbData: any = { ...rest };
+    if (hiddenFilterKeys !== undefined) dbData.hiddenFilterKeys = hiddenFilterKeys !== null ? JSON.stringify(hiddenFilterKeys) : null;
+    const map = await db.map.create({ data: dbData }) as any;
+    res.status(201).json({ data: { ...map, hiddenFilterKeys: map.hiddenFilterKeys ? JSON.parse(map.hiddenFilterKeys) : null } });
   } catch (err) {
     next(err);
   }
