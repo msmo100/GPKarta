@@ -1,1 +1,0 @@
-ALTER TABLE "Map" ADD COLUMN "filterDarkMode" BOOLEAN NOT NULL DEFAULT false;

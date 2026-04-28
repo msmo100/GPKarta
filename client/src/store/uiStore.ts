@@ -21,7 +21,6 @@ interface UiState {
   pendingMarker: PendingMarker | null;
   pendingShape: PendingShape | null;
   modal: ModalType;
-  modalData: any;
 
   // Fixed filters
   filterCategoryIds: string[];
@@ -52,7 +51,7 @@ interface UiState {
   setDrawingShape: (drawing: boolean) => void;
   setPendingMarker: (marker: PendingMarker | null) => void;
   setPendingShape: (shape: PendingShape | null) => void;
-  openModal: (type: ModalType, data?: any) => void;
+  openModal: (type: ModalType) => void;
   closeModal: () => void;
   setFilterCategories: (ids: string[]) => void;
   setFilterFrom: (from: string) => void;
@@ -72,7 +71,6 @@ export const useUiStore = create<UiState>((set) => ({
   pendingMarker: null,
   pendingShape: null,
   modal: null,
-  modalData: null,
   filterCategoryIds: [],
   filterFrom: '',
   filterTo: '',
@@ -97,8 +95,8 @@ export const useUiStore = create<UiState>((set) => ({
   setDrawingShape: (drawing) => set({ isDrawingShape: drawing }),
   setPendingMarker: (marker) => set({ pendingMarker: marker, isAddingMarker: false }),
   setPendingShape: (shape) => set({ pendingShape: shape, isDrawingShape: false }),
-  openModal: (type, data) => set({ modal: type, modalData: data }),
-  closeModal: () => set({ modal: null, modalData: null, pendingMarker: null, pendingShape: null }),
+  openModal: (type) => set({ modal: type }),
+  closeModal: () => set({ modal: null, pendingMarker: null, pendingShape: null }),
   setFilterCategories: (ids) => set({ filterCategoryIds: ids }),
   setFilterFrom: (from) => set({ filterFrom: from }),
   setFilterTo: (to) => set({ filterTo: to }),

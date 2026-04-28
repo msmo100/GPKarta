@@ -13,6 +13,7 @@ const createMapSchema = z.object({
   centerLat: z.number().min(-90).max(90).optional(),
   centerLng: z.number().min(-180).max(180).optional(),
   defaultZoom: z.number().int().min(1).max(20).optional(),
+  minZoom: z.number().int().min(1).max(18).optional().nullable(),
   tileLayer: z.enum(TILE_LAYERS).optional(),
   clusterMarkers: z.boolean().optional(),
   clusterColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/).optional().nullable(),

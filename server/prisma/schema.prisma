@@ -17,6 +17,7 @@ model Map {
   centerLat   Float  @default(57.7089)
   centerLng   Float  @default(11.9746)
   defaultZoom Int    @default(12)
+  minZoom     Int?
 
   // Display options
   tileLayer      String  @default("osm")

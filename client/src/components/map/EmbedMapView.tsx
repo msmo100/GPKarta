@@ -57,6 +57,7 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
   const centerLat = config.lat ?? data.centerLat;
   const centerLng = config.lng ?? data.centerLng;
   const zoom = config.zoom ?? data.defaultZoom;
+  const minZoom = (data as any).minZoom ?? undefined;
   const tileLayer = getTileLayer((data as any).tileLayer ?? 'osm');
   const clusterMarkers = (data as any).clusterMarkers ?? false;
   const clusterColor = (data as any).clusterColor ?? '#2563eb';
@@ -79,6 +80,7 @@ export function EmbedMapView({ data, config, filteredMarkers }: EmbedMapViewProp
       <MapContainer
         center={[centerLat, centerLng]}
         zoom={zoom}
+        minZoom={minZoom}
         style={{ width: '100%', height: '100%' }}
         zoomControl={!config.hideControls}
         attributionControl={!config.hideAttribution}

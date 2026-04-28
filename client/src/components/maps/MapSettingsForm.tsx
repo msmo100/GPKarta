@@ -21,6 +21,7 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
   const [clusterBorderColor, setClusterBorderColor] = useState(existing?.clusterBorderColor ?? '#ffffff');
   const [showMinimap, setShowMinimap] = useState(existing?.showMinimap ?? false);
   const [showScaleBar, setShowScaleBar] = useState(existing?.showScaleBar ?? true);
+  const [minZoom, setMinZoom] = useState<string>(existing?.minZoom != null ? String(existing.minZoom) : '');
   const [popupBg, setPopupBg] = useState(existing?.popupBg ?? '');
   const [popupTextColor, setPopupTextColor] = useState(existing?.popupTextColor ?? '');
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,7 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
         showScaleBar,
         popupBg: popupBg || null,
         popupTextColor: popupTextColor || null,
+        minZoom: minZoom !== '' ? parseInt(minZoom, 10) : null,
       };
       const map = existing
         ? await mapsApi.update(existing.id, payload)
@@ -153,6 +155,21 @@ export function MapSettingsForm({ existing, onSave, onClose }: MapSettingsFormPr
             <input type="checkbox" checked={showMinimap} onChange={(e) => setShowMinimap(e.target.checked)} />
             Visa minikarta
           </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <span style={{ color: '#374151' }}>Begränsa utzoom till</span>
+            <select
+              value={minZoom}
+              onChange={(e) => setMinZoom(e.target.value)}
+              style={{ padding: '3px 7px', borderRadius: 5, border: '1px solid #d1d5db', fontSize: 13, background: '#fff', cursor: 'pointer' }}
+            >
+              <option value="">Ingen begränsning</option>
+              <option value="2">Världskarta</option>
+              <option value="4">Kontinent</option>
+              <option value="6">Land</option>
+              <option value="9">Region</option>
+              <option value="11">Stad</option>
+            </select>
+          </div>
         </div>
       </FormField>
 

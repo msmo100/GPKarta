@@ -31,6 +31,15 @@ interface MapViewProps {
   readOnly?: boolean;
 }
 
+// Apply minZoom dynamically (MapContainer prop is immutable after mount)
+function MinZoomController({ minZoom }: { minZoom: number | null }) {
+  const leafletMap = useMap();
+  useEffect(() => {
+    leafletMap.setMinZoom(minZoom ?? 0);
+  }, [minZoom, leafletMap]);
+  return null;
+}
+
 // Fly to active marker
 function FlyToMarker({ markerId, markers }: { markerId: string | null; markers: Marker[] }) {
   const leafletMap = useMap();
@@ -185,6 +194,7 @@ export function MapView({ map, markers, filteredMarkers, shapes = [], readOnly =
       <MapContainer
         center={[map.centerLat, map.centerLng]}
         zoom={map.defaultZoom}
+        minZoom={map.minZoom ?? undefined}
         style={{ height: '100%', width: '100%' }}
         zoomControl={true}
       >
@@ -208,6 +218,7 @@ export function MapView({ map, markers, filteredMarkers, shapes = [], readOnly =
 
         {/* Map utilities */}
         {!readOnly && <MapClickHandler />}
+        <MinZoomController minZoom={map.minZoom} />
         <FlyToMarker markerId={activeMarkerId} markers={markers} />
         <GeocoderControl />
         {map.showScaleBar && <ScaleBar />}

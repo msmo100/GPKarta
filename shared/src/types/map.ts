@@ -19,6 +19,7 @@ export interface MapRecord {
   centerLat: number;
   centerLng: number;
   defaultZoom: number;
+  minZoom: number | null;
   tileLayer: TileLayerKey;
   clusterMarkers: boolean;
   clusterColor: string | null;
@@ -40,6 +41,7 @@ export interface CreateMapInput {
   centerLat?: number;
   centerLng?: number;
   defaultZoom?: number;
+  minZoom?: number | null;
   tileLayer?: TileLayerKey;
   clusterMarkers?: boolean;
   clusterColor?: string | null;
@@ -58,6 +60,7 @@ export interface UpdateMapInput {
   centerLat?: number;
   centerLng?: number;
   defaultZoom?: number;
+  minZoom?: number | null;
   tileLayer?: TileLayerKey;
   clusterMarkers?: boolean;
   clusterColor?: string | null;
